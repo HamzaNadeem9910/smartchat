@@ -1,0 +1,20 @@
+# ── Core FastAPI stack ──────────────────────────────────────────
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+
+# ── DB ──────────────────────────────────────────────────────────
+pymysql>=1.1.0            # MySQL driver (matches restaurantBot pattern)
+
+# ── AI / Vector ─────────────────────────────────────────────────
+openai>=1.30.0
+pinecone-client>=3.2.2
+langchain-pinecone>=0.1.1
+langchain-openai>=0.1.6
+langchain-core>=0.2.0
+
+# ── Utils ───────────────────────────────────────────────────────
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-multipart>=0.0.9
+httpx>=0.27.0             # async HTTP for log_turn calls

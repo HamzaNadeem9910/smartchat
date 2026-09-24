@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Restaurant Chat Widget</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0b07;
+    --surface: #181208;
+    --surface2: #221a0e;
+    --gold: #d4a832;
+    --gold-dim: #8a6c1f;
+    --cream: #f5ead6;
+    --subtext: #9a8870;
+    --border: #2e2416;
+    --green: #1e8c5a;
+    --red: #c0392b;
+    --radius: 16px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: transparent; }
+
+  /* ── Floating button ── */
+  #chatToggle {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(212,168,50,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 9999;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  #chatToggle:hover { transform: scale(1.1); box-shadow: 0 8px 28px rgba(212,168,50,0.6); }
+
+  .badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--red);
+    color: #fff;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .badge.visible { display: flex; }
+
+  /* ── Chat window ── */
+  #chatWindow {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    width: 360px;
+    height: 540px;
+    background: var(--bg);
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 16px 60px rgba(0,0,0,0.7);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9998;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    background-image: radial-gradient(ellipse at 20% 0%, rgba(212,168,50,0.06) 0%, transparent 60%);
+  }
+  #chatWindow.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* ── Header ── */
+  .w-header {
+    padding: 14px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .w-header img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover; }
+  .w-header-info h3 { font-size: 0.88rem; color: var(--cream); font-weight: 500; }
+  .w-header-info p { font-size: 0.7rem; color: var(--green); }
+  .w-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--subtext);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+  .w-close:hover { color: var(--cream); }
+
+  /* ── Messages ── */
+  .w-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-behavior: smooth;
+  }
+  .w-messages::-webkit-scrollbar { width: 3px; }
+  .w-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .w-msg { display: flex; gap: 8px; max-width: 85%; animation: wMsgIn 0.2s ease; }
+  @keyframes wMsgIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+  .w-msg.user { margin-left: auto; flex-direction: row-reverse; }
+  .w-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; margin-top: 2px; }
+  .w-bubble {
+    padding: 9px 13px;
+    border-radius: 16px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  .w-msg.bot .w-bubble {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--cream);
+  }
+  .w-msg.user .w-bubble { background: var(--gold-dim); color: var(--cream); border-top-right-radius: 4px; }
+
+  /* ── Menu mini cards ── */
+  .w-menu-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+    margin-top: 6px;
+    align-items: center;
+  }
+  .w-menu-card img { width: 40px; height: 40px; border-radius: 7px; object-fit: cover; flex-shrink: 0; }
+  .w-mc-info { flex: 1; }
+  .w-mc-info strong { font-size: 0.78rem; color: var(--cream); display: block; }
+  .w-mc-info span { font-size: 0.7rem; color: var(--gold); }
+  .w-add-btn {
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .w-add-btn:hover { background: #e6b93a; }
+
+  /* ── Cart pill ── */
+  .w-cart-pill {
+    margin: 0 12px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: none;
+    flex-shrink: 0;
+  }
+  .w-cart-pill.visible { display: block; }
+  .w-cart-summary { font-size: 0.78rem; color: var(--cream); display: flex; justify-content: space-between; align-items: center; }
+  .w-cart-total { color: var(--gold); font-weight: 500; }
+  .w-checkout-btn {
+    width: 100%;
+    margin-top: 6px;
+    padding: 7px;
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .w-checkout-btn:hover { background: #e6b93a; }
+
+  /* ── Input ── */
+  .w-input-area {
+    padding: 10px 12px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    flex-shrink: 0;
+  }
+  .w-input-area textarea {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--cream);
+    padding: 9px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    resize: none;
+    min-height: 38px;
+    max-height: 90px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .w-input-area textarea:focus { border-color: var(--gold-dim); }
+  .w-input-area textarea::placeholder { color: var(--subtext); }
+  .w-send {
+    width: 38px; height: 38px;
+    background: var(--gold);
+    border: none;
+    border-radius: 10px;
+    color: var(--bg);
+    cursor: pointer;
+    font-size: 1rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .w-send:hover { background: #e6b93a; }
+  .w-send:disabled { background: var(--border); color: var(--subtext); cursor: not-allowed; }
+
+  /* ── Typing ── */
+  .w-typing { display: flex; gap: 4px; align-items: center; padding: 9px 13px; }
+  .w-typing span { width: 6px; height: 6px; background: var(--gold-dim); border-radius: 50%; animation: bounce 1.2s infinite; }
+  .w-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .w-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }
+
+  /* ── Toast ── */
+  #wToast {
+    position: fixed;
+    bottom: 110px;
+    right: 24px;
+    background: var(--green);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 10000;
+  }
+  #wToast.show { opacity: 1; }
+
+  @media (max-width: 420px) {
+    #chatWindow { width: calc(100vw - 16px); right: 8px; bottom: 88px; }
+    #chatToggle { right: 16px; bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Toggle Button -->
+<button id="chatToggle" onclick="toggleChat()">
+  🍔
+  <span class="badge" id="chatBadge">0</span>
+</button>
+
+<!-- Chat Window -->
+<div id="chatWindow">
+  <div class="w-header">
+    <img src="https://cdn.myportfolio.com/0bdda948-75a0-41aa-904b-858272e7ec25/02a09105-16dc-4533-9751-98ab76e18eb3_rw_1200.gif?h=72256571735a377cd9d2b3f98a6d99a1" alt="Bot"/>
+    <div class="w-header-info">
+      <h3>Restaurant Assistant 🛍️</h3>
+      <p>● Online</p>
+    </div>
+    <button class="w-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="w-messages" id="wMessages">
+    <div class="w-msg bot">
+      <img class="w-avatar" src="https://cdn.myportfolio.com/0bdda948-75a0-41aa-904b-858272e7ec25/02a09105-16dc-4533-9751-98ab76e18eb3_rw_1200.gif?h=72256571735a377cd9d2b3f98a6d99a1"/>
+      <div class="w-bubble">👋 Hi! Ask me anything about our menu or say <strong>"Show me burgers"</strong>!</div>
+    </div>
+  </div>
+
+  <div class="w-cart-pill" id="wCartPill">
+    <div class="w-cart-summary">
+      <span id="wCartSummary">0 items</span>
+      <span class="w-cart-total" id="wCartTotal">Rs. 0</span>
+    </div>
+    <button class="w-checkout-btn" onclick="wCheckout()">🛒 Proceed to Order</button>
+  </div>
+
+  <div class="w-input-area">
+    <textarea id="wInput" placeholder="Type a message..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();wSend()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
+    <button class="w-send" id="wSendBtn" onclick="wSend()">➤</button>
+  </div>
+</div>
+
+<div id="wToast"></div>
+
+<script>
+// ── CONFIG: Set this to your deployed FastAPI URL ──
+const W_API_URL = "http://localhost:8000";
+const W_BOT_AVATAR = "https://cdn.myportfolio.com/0bdda948-75a0-41aa-904b-858272e7ec25/02a09105-16dc-4533-9751-98ab76e18eb3_rw_1200.gif?h=72256571735a377cd9d2b3f98a6d99a1";
+const W_USER_AVATAR = "https://media.lordicon.com/icons/wired/flat/268-avatar-man.gif";
+const PLACEHOLDER = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRl9d4mCkegQn_dnQFq6hiPNFcQowRaBtzacA&s";
+
+let wState = {
+  open: false,
+  sessionId: crypto.randomUUID(),
+  cartItems: [],
+  pendingCart: [],
+  orderDetails: {},
+  awaitingOrderDetails: false,
+  currentField: null,
+};
+
+function toggleChat() {
+  wState.open = !wState.open;
+  document.getElementById("chatWindow").classList.toggle("open", wState.open);
+  if (wState.open) document.getElementById("wInput").focus();
+}
+
+function wEsc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+}
+
+function wScroll() {
+  const m = document.getElementById("wMessages");
+  m.scrollTop = m.scrollHeight;
+}
+
+function wToast(msg) {
+  const t = document.getElementById("wToast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function wAppendBot(html, raw=false) {
+  const m = document.getElementById("wMessages");
+  const d = document.createElement("div");
+  d.className = "w-msg bot";
+  d.innerHTML = `<img class="w-avatar" src="${W_BOT_AVATAR}"/>
+    <div class="w-bubble">${raw ? html : wEsc(html)}</div>`;
+  m.appendChild(d);
+  wScroll();
+}
+
+function wAppendUser(text) {
+  const m = document.getElementById("wMessages");
+  const d = document.createElement("div");
+  d.className = "w-msg user";
+  d.innerHTML = `<img class="w-avatar" src="${W_USER_AVATAR}"/>
+    <div class="w-bubble">${wEsc(text)}</div>`;
+  m.appendChild(d);
+  wScroll();
+}
+
+function wTyping() {
+  const m = document.getElementById("wMessages");
+  const d = document.createElement("div");
+  d.className = "w-msg bot"; d.id = "wTyping";
+  d.innerHTML = `<img class="w-avatar" src="${W_BOT_AVATAR}"/>
+    <div class="w-bubble"><div class="w-typing"><span></span><span></span><span></span></div></div>`;
+  m.appendChild(d);
+  wScroll();
+}
+
+function wRemoveTyping() { const t = document.getElementById("wTyping"); if(t) t.remove(); }
+
+function wRenderItems(items) {
+  const m = document.getElementById("wMessages");
+  items.forEach(item => {
+    const d = document.createElement("div");
+    d.className = "w-msg bot";
+    d.innerHTML = `<img class="w-avatar" src="${W_BOT_AVATAR}"/>
+      <div style="flex:1">
+        <div class="w-menu-card">
+          <img src="${item.img || PLACEHOLDER}" onerror="this.src='${PLACEHOLDER}'" alt="${wEsc(item.name)}"/>
+          <div class="w-mc-info">
+            <strong>${wEsc(item.name)}</strong>
+            <span>Rs. ${item.price}</span>
+          </div>
+          <button class="w-add-btn" onclick='wAddToCart(${JSON.stringify(item).replace(/'/g,"&#39;")})'>+ Add</button>
+        </div>
+      </div>`;
+    m.appendChild(d);
+  });
+  wScroll();
+}
+
+function wAddToCart(item) {
+  const existing = wState.cartItems.find(c => c.product === item.name);
+  if (existing) { existing.qty++; } else {
+    wState.cartItems.push({ product: item.name, price: item.price, qty: 1, img: item.img || PLACEHOLDER });
+  }
+  wUpdateCart();
+  wToast(`Added ${item.name}! 🛒`);
+}
+
+function wUpdateCart() {
+  const total = wState.cartItems.reduce((s,i)=>s+i.price*i.qty, 0);
+  const qty = wState.cartItems.reduce((s,i)=>s+i.qty, 0);
+  const pill = document.getElementById("wCartPill");
+  const badge = document.getElementById("chatBadge");
+  badge.textContent = qty;
+  badge.classList.toggle("visible", qty > 0);
+  if (qty > 0) {
+    pill.classList.add("visible");
+    document.getElementById("wCartSummary").textContent = `${qty} item${qty>1?"s":""}`;
+    document.getElementById("wCartTotal").textContent = `Rs. ${total}`;
+  } else {
+    pill.classList.remove("visible");
+  }
+}
+
+function wCheckout() {
+  document.getElementById("wInput").value = "I want to order these items";
+  wSend();
+}
+
+async function wSend() {
+  const input = document.getElementById("wInput");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  input.style.height = "auto";
+  document.getElementById("wSendBtn").disabled = true;
+
+  wAppendUser(text);
+  wTyping();
+
+  try {
+    const res = await fetch(`${W_API_URL}/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: wState.sessionId,
+        message: text,
+        cart_items: wState.cartItems,
+        order_details: wState.orderDetails,
+        awaiting_order_details: wState.awaitingOrderDetails,
+        current_field: wState.currentField,
+        pending_cart: wState.pendingCart
+      })
+    });
+    const data = await res.json();
+    wRemoveTyping();
+
+    if (data.state) {
+      if (data.state.awaiting_order_details !== undefined) wState.awaitingOrderDetails = data.state.awaiting_order_details;
+      if (data.state.current_field !== undefined) wState.currentField = data.state.current_field;
+      if (data.state.order_details) wState.orderDetails = data.state.order_details;
+      if (data.state.cart_items) { wState.cartItems = data.state.cart_items; wUpdateCart(); }
+      if (data.state.pending_cart) wState.pendingCart = data.state.pending_cart;
+    }
+
+    if (data.new_items) {
+      data.new_items.forEach(item => {
+        if (!wState.cartItems.find(c => c.product === item.product)) wState.cartItems.push(item);
+      });
+      wUpdateCart();
+    }
+
+    wAppendBot(data.message || "...");
+    if (data.items && data.items.length) wRenderItems(data.items);
+
+  } catch(e) {
+    wRemoveTyping();
+    wAppendBot("Connection error. Is the API server running?");
+  }
+
+  document.getElementById("wSendBtn").disabled = false;
+}
+</script>
+</body>
+</html>

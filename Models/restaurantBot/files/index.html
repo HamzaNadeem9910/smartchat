@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Restaurant Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:       #0e0b07;
+  --surface:  #181208;
+  --surface2: #221a0e;
+  --gold:     #d4a832;
+  --gold-dim: #8a6c1f;
+  --red:      #c0392b;
+  --green:    #1e8c5a;
+  --text:     #f0e6d0;
+  --muted:    #9a8870;
+  --border:   #2e2416;
+  --radius:   16px;
+  --btn-radius: 10px;
+  --accent:   #d4a832;
+  --accent2:  #c0392b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100dvh;display:flex;overflow:hidden}
+
+/* ── Loading ── */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999}
+#loading .spin{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{color:var(--muted);font-size:14px}
+
+/* ── Sidebar (Cart) ── */
+.sidebar{width:290px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.sidebar-header{padding:20px 18px 14px;border-bottom:1px solid var(--border)}
+.sidebar-header h2{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text);display:flex;align-items:center;gap:8px}
+.cart-count{background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;font-size:.7rem;display:flex;align-items:center;justify-content:center;font-weight:700}
+.cart-items{flex:1;overflow-y:auto;padding:10px}
+.cart-items::-webkit-scrollbar{width:3px}
+.cart-items::-webkit-scrollbar-thumb{background:var(--border)}
+.cart-item{display:flex;gap:10px;padding:10px 6px;border-bottom:1px solid var(--border);align-items:flex-start;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.cart-item img{width:46px;height:46px;border-radius:8px;object-fit:cover;flex-shrink:0}
+.cart-item-info{flex:1}
+.cart-item-info strong{font-size:.8rem;color:var(--text);display:block;line-height:1.3}
+.cart-item-info span{font-size:.73rem;color:var(--muted)}
+.qty-controls{display:flex;align-items:center;gap:5px;margin-top:5px}
+.qty-btn{width:22px;height:22px;border:1px solid var(--border);background:var(--surface2);color:var(--gold);border-radius:5px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.qty-btn:hover{background:var(--gold);color:var(--bg)}
+.qty-display{font-size:.8rem;color:var(--text);min-width:16px;text-align:center}
+.del-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:.8rem;padding:2px 4px;border-radius:4px;opacity:.7;transition:opacity .15s}
+.del-btn:hover{opacity:1}
+.cart-empty{text-align:center;padding:30px 14px;color:var(--muted);font-size:.84rem}
+.cart-empty .icon{font-size:2rem;margin-bottom:8px}
+.cart-footer{padding:14px;border-top:1px solid var(--border)}
+.cart-total{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--text);margin-bottom:10px;display:flex;justify-content:space-between}
+.btn{width:100%;padding:10px 14px;border-radius:var(--btn-radius);font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:500;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:var(--gold);color:var(--bg);margin-bottom:7px}
+.btn-primary:hover{background:#e6b93a;transform:translateY(-1px);box-shadow:0 4px 16px rgba(212,168,50,.3)}
+.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red)}
+.btn-danger:hover{background:var(--red);color:#fff}
+
+/* ── FAQ strip ── */
+.faq-strip{padding:10px 14px;border-top:1px solid var(--border)}
+.faq-label{font-size:.68rem;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.faq-chips{display:flex;flex-direction:column;gap:5px;max-height:140px;overflow-y:auto}
+.faq-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.75rem;color:var(--text);cursor:pointer;text-align:left;transition:all .2s;white-space:normal;line-height:1.3}
+.faq-chip:hover{border-color:var(--gold);color:var(--text)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:14px 22px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;gap:12px}
+.bot-avatar{width:40px;height:40px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;flex-shrink:0;font-size:22px;display:flex;align-items:center;justify-content:center;background:var(--surface2);overflow:hidden}
+.bot-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.topbar-info h1{font-family:'Playfair Display',serif;font-size:1rem;color:var(--text)}
+.topbar-info p{font-size:.72rem;color:var(--green)}
+.tts-pill{margin-left:auto;background:var(--surface2);border:1px solid var(--gold);border-radius:99px;padding:4px 12px;font-size:.72rem;color:var(--gold);display:none;align-items:center;gap:5px}
+.tts-pill.show{display:flex}
+.stop-tts-btn{background:var(--surface2);border:1px solid var(--red);border-radius:99px;padding:4px 12px;font-size:.72rem;color:var(--red);cursor:pointer;display:none;align-items:center;gap:5px;margin-left:6px;transition:all .2s}
+.stop-tts-btn:hover{background:var(--red);color:#fff}
+.stop-tts-btn.show{display:flex}
+
+.messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+.msg{display:flex;gap:10px;max-width:82%;animation:msgIn .25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{margin-left:auto;flex-direction:row-reverse}
+.msg-avatar-wrap{width:32px;height:32px;border-radius:50%;flex-shrink:0;margin-top:2px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:16px}
+.msg.bot .msg-avatar-wrap{background:var(--surface2);border:1px solid var(--border)}
+.msg.user .msg-avatar-wrap{background:var(--gold-dim)}
+.msg-avatar-wrap img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.msg-body{display:flex;flex-direction:column;gap:4px}
+.bubble{padding:11px 15px;border-radius:16px;font-size:.87rem;line-height:1.55;word-break:break-word}
+.msg.bot  .bubble{background:var(--surface2);border:1px solid var(--border);border-top-left-radius:4px;color:var(--text)}
+.msg.user .bubble{background:var(--gold-dim);color:var(--text);border-top-right-radius:4px}
+
+/* Typing dots */
+.typing-dots{display:flex;gap:4px;align-items:center;padding:4px 0}
+.typing-dots span{width:6px;height:6px;background:var(--muted);border-radius:50%;animation:dot 1.4s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-6px);opacity:1}}
+
+/* Menu grid */
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:12px;margin-top:8px;max-width:640px}
+.menu-card{background:var(--surface2);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:pointer;display:flex;flex-direction:column}
+.menu-card:hover{transform:translateY(-4px);box-shadow:0 10px 28px rgba(0,0,0,.45)}
+.menu-card:hover .menu-card-img-wrap::after{opacity:1}
+.menu-card-img-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--surface)}
+.menu-card-img-wrap::after{content:'👁 View';position:absolute;inset:0;background:rgba(0,0,0,.42);color:#fff;font-size:.75rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:5px;opacity:0;transition:opacity .2s;letter-spacing:.3px}
+.menu-card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .35s}
+.menu-card:hover .menu-card-img-wrap img{transform:scale(1.06)}
+.menu-card-body{padding:10px 12px;flex:1;display:flex;flex-direction:column}
+.menu-card-body h4{font-size:.82rem;font-weight:600;color:var(--text);margin-bottom:3px;line-height:1.3}
+.menu-card-body p{font-size:.71rem;color:var(--muted);margin-bottom:8px;line-height:1.4;flex:1}
+.menu-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.price-tag{font-family:'Playfair Display',serif;font-size:.88rem;color:var(--text);font-weight:700}
+.add-btn{background:var(--gold);color:var(--bg);border:none;border-radius:6px;padding:5px 11px;font-size:.72rem;cursor:pointer;font-weight:700;transition:all .15s;flex-shrink:0}
+.add-btn:hover{background:#e6b93a;transform:scale(1.05)}
+
+/* ── Item Detail Modal ── */
+#itemModal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
+#itemModal.open{opacity:1;pointer-events:all}
+#itemModal .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(6px)}
+#itemModal .modal-box{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:20px;width:100%;max-width:460px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;transform:translateY(20px) scale(.97);transition:transform .25s}
+#itemModal.open .modal-box{transform:translateY(0) scale(1)}
+.modal-img-wrap{width:100%;aspect-ratio:16/9;overflow:hidden;flex-shrink:0;background:var(--surface2)}
+.modal-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.modal-body{padding:20px 22px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.modal-name{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--text);line-height:1.25}
+.modal-desc{font-size:.85rem;color:var(--muted);line-height:1.6}
+.modal-price-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.modal-price{font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--text);font-weight:700}
+.modal-qty-wrap{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:4px 8px}
+.modal-qty-btn{width:28px;height:28px;border:none;background:transparent;color:var(--text);font-size:1.1rem;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:background .15s;font-weight:700}
+.modal-qty-btn:hover{background:var(--border)}
+.modal-qty-val{min-width:28px;text-align:center;font-size:.95rem;font-weight:600;color:var(--text)}
+.modal-add-btn{width:100%;padding:13px;background:var(--gold);color:var(--bg);border:none;border-radius:12px;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.modal-add-btn:hover{background:#e6b93a;transform:translateY(-1px);box-shadow:0 6px 20px rgba(212,168,50,.35)}
+.modal-close{position:absolute;top:12px;right:12px;width:34px;height:34px;background:rgba(0,0,0,.55);border:none;border-radius:50%;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:background .15s;line-height:1}
+.modal-close:hover{background:rgba(0,0,0,.8)}
+
+/* Timer */
+.timer-banner{display:none;padding:12px 20px;background:rgba(30,140,90,.12);border-bottom:1px solid var(--green);align-items:center;gap:12px}
+.timer-banner.active{display:flex}
+.timer-bar-wrap{flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden}
+.timer-bar{height:100%;background:var(--green);border-radius:99px;transition:width 1s linear}
+.timer-text{font-size:.78rem;color:var(--green);white-space:nowrap}
+.timer-actions{display:flex;gap:8px}
+.timer-action-btn{padding:5px 12px;border-radius:7px;font-size:.76rem;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;font-weight:500}
+.timer-confirm{background:var(--green);color:#fff}
+.timer-cancel{background:transparent;border:1px solid var(--red);color:var(--red)}
+
+/* Input area */
+.input-area{padding:12px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:10px}
+.input-area textarea{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;resize:none;outline:none;max-height:100px;transition:border .2s;line-height:1.5}
+.input-area textarea:focus{border-color:var(--gold)}
+.input-area textarea::placeholder{color:var(--muted)}
+.input-area textarea:disabled{opacity:.5;cursor:not-allowed}
+.send-btn{width:42px;height:42px;background:var(--gold);border:none;border-radius:var(--btn-radius);color:var(--bg);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.send-btn:hover{background:#e6b93a;transform:scale(1.05)}
+.mic-btn{width:42px;height:42px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--btn-radius);color:var(--text);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.mic-btn:hover{border-color:var(--gold);color:var(--gold)}
+.mic-btn.recording{background:rgba(192,57,43,.15);border-color:var(--red);color:var(--red);animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(192,57,43,.4)}50%{box-shadow:0 0 0 8px rgba(192,57,43,0)}}
+
+/* ── Intro Screen — lives inside .messages-wrap ── */
+#introScreen{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;z-index:10;padding:32px 24px;text-align:center;animation:fadeIn .4s ease;overflow-y:auto}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+#introScreen.hidden{display:none}
+.intro-logo{width:80px;height:80px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;margin-bottom:20px;display:flex;align-items:center;justify-content:center;background:var(--surface2);font-size:38px;overflow:hidden;flex-shrink:0}
+.intro-logo img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.intro-title{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:700;color:var(--text);margin-bottom:10px;line-height:1.25}
+.intro-subtitle{font-size:.88rem;color:var(--muted);margin-bottom:28px;max-width:340px;line-height:1.6}
+.intro-faqs{display:flex;flex-direction:column;gap:8px;width:100%;max-width:400px}
+.intro-faq-chip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:9px 18px;font-size:.83rem;color:var(--text);cursor:pointer;transition:all .2s;text-align:center}
+.intro-faq-chip:hover{border-color:var(--gold);color:var(--text);background:var(--surface)}
+
+/* messages-wrap: flex container that holds intro + real messages */
+.messages-wrap{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+
+/* ── Training / Inactive overlay — inside messages-wrap ── */
+.chat-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:8;backdrop-filter:blur(4px);background:rgba(0,0,0,.55);pointer-events:none;opacity:0;transition:opacity .35s}
+.chat-overlay.show{opacity:1;pointer-events:all}
+.overlay-icon{font-size:2.6rem}
+.overlay-title{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text);font-weight:700}
+.overlay-sub{font-size:.82rem;color:var(--muted);text-align:center;max-width:260px;line-height:1.5}
+.overlay-pulse{width:12px;height:12px;border-radius:50%;background:var(--gold);animation:overlayPulse 1.4s infinite}
+@keyframes overlayPulse{0%,100%{opacity:.3;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}}
+
+/* ── Listening badge in textarea ── */
+.listening-badge{position:absolute;left:50%;transform:translateX(-50%);top:50%;margin-top:-12px;background:rgba(192,57,43,.15);border:1px solid var(--red);border-radius:99px;padding:4px 14px;font-size:.76rem;color:var(--red);white-space:nowrap;display:none;align-items:center;gap:6px;pointer-events:none}
+.listening-badge.show{display:flex}
+.listening-dot{width:7px;height:7px;border-radius:50%;background:var(--red);animation:micPulse .9s infinite}
+.input-wrap{position:relative;flex:1;display:flex;align-items:center}
+.input-wrap textarea{width:100%}
+
+/* Phone input */
+.phone-wrap{display:flex;align-items:center;gap:0;background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;flex:1;transition:border .2s}
+.phone-wrap:focus-within{border-color:var(--gold)}
+.phone-prefix{padding:11px 10px 11px 14px;font-size:.88rem;color:var(--gold);font-weight:600;white-space:nowrap;border-right:1px solid var(--border);background:transparent;flex-shrink:0}
+.phone-digits{flex:1;background:transparent;border:none;padding:11px 14px 11px 10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none}
+.phone-digits::placeholder{color:var(--muted)}
+
+/* Toast */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:rgba(30,140,90,.92);color:#fff;padding:8px 18px;border-radius:99px;font-size:.82rem;font-weight:500;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ── Cart toggle button (mobile) ── */
+.cart-toggle-btn{display:none;position:relative;width:40px;height:40px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--btn-radius);color:var(--text);font-size:18px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;margin-left:auto}
+.cart-toggle-btn:hover{border-color:var(--gold);color:var(--gold)}
+.cart-toggle-btn .cart-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;border-radius:50%;width:18px;height:18px;font-size:.62rem;display:none;align-items:center;justify-content:center;font-weight:700;line-height:1}
+.cart-toggle-btn .cart-badge.show{display:flex}
+
+/* ── Sidebar backdrop (mobile) ── */
+#sidebarBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:49;backdrop-filter:blur(2px)}
+#sidebarBackdrop.show{display:block}
+
+/* ── Responsive breakpoints ── */
+
+/* Tablet: 641px – 960px — narrow sidebar */
+@media(max-width:960px){
+  .sidebar{width:260px;min-width:240px}
+  .menu-grid{grid-template-columns:repeat(auto-fill,minmax(155px,1fr))}
+  .msg{max-width:88%}
+}
+
+/* Mobile: ≤ 640px — sidebar becomes a slide-in drawer */
+@media(max-width:640px){
+  body{overflow:hidden}
+
+  /* Sidebar becomes a fixed drawer */
+  .sidebar{
+    position:fixed;top:0;left:0;bottom:0;
+    width:min(300px,85vw);
+    z-index:50;
+    transform:translateX(-100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    border-right:1px solid var(--border);
+    box-shadow:6px 0 28px rgba(0,0,0,.45)
+  }
+  .sidebar.open{transform:translateX(0)}
+
+  /* Show cart toggle in topbar */
+  .cart-toggle-btn{display:flex}
+
+  /* Hide tts pill text on tiny screens — just show icon */
+  .tts-pill{padding:4px 8px}
+
+  /* Topbar compact */
+  .topbar{padding:10px 14px;gap:9px}
+  .topbar-info h1{font-size:.9rem}
+  .topbar-info p{font-size:.65rem}
+
+  /* Messages padding tighter */
+  .messages{padding:12px}
+  .msg{max-width:92%}
+  .bubble{font-size:.84rem;padding:9px 12px}
+
+  /* Menu grid: 2 columns on mobile */
+  .menu-grid{grid-template-columns:repeat(2,1fr);gap:8px;max-width:100%}
+  .menu-card-body h4{font-size:.77rem}
+  .menu-card-body p{font-size:.67rem}
+
+  /* Input area compact */
+  .input-area{padding:8px 12px;gap:8px}
+  .send-btn,.mic-btn{width:38px;height:38px;font-size:16px}
+
+  /* Intro screen tighter on mobile */
+  #introScreen{padding:20px 16px}
+  .intro-title{font-size:1.2rem}
+  .intro-logo{width:64px;height:64px;font-size:30px}
+
+  /* Item modal full-screen on mobile */
+  #itemModal{padding:0;align-items:flex-end}
+  #itemModal .modal-box{max-width:100%;border-bottom-left-radius:0;border-bottom-right-radius:0;border-top-left-radius:20px;border-top-right-radius:20px;max-height:92vh}
+  .modal-img-wrap{aspect-ratio:16/8}
+}
+
+/* Very small phones ≤ 380px */
+@media(max-width:380px){
+  .menu-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .topbar-info h1{font-size:.82rem}
+  .topbar-info p{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spin"></div><p>Loading...</p></div>
+
+<!-- Sidebar backdrop (mobile) -->
+<div id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+<!-- Sidebar — Cart + FAQs -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <h2>🛒 Your Cart <span class="cart-count" id="cartCount">0</span></h2>
+    <button onclick="closeSidebar()" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 4px;border-radius:6px;display:none" id="sidebarCloseBtn" title="Close">✕</button>
+  </div>
+  <div class="cart-items" id="cartList">
+    <div class="cart-empty"><div class="icon">🍽️</div><p>Your cart is empty.<br>Browse our menu!</p></div>
+  </div>
+  <div id="cartFooter" style="display:none">
+    <div class="cart-footer">
+      <div class="cart-total"><span>Total</span><span id="grandTotal">Rs. 0</span></div>
+      <button class="btn btn-primary" onclick="checkoutCart()">🍔 Place Order</button>
+      <button class="btn btn-danger"  onclick="clearCart()">🗑 Clear Cart</button>
+    </div>
+  </div>
+  <!-- FAQs as quick chips -->
+  <div class="faq-strip" id="faqStrip" style="display:none">
+    <div class="faq-label">Quick Questions</div>
+    <div class="faq-chips" id="faqChips"></div>
+  </div>
+</div>
+
+<!-- Main chat -->
+<div class="main">
+
+  <div class="topbar">
+    <div class="bot-avatar" id="topbarAvatar">🍔</div>
+    <div class="topbar-info">
+      <h1 id="topbarName">Restaurant Bot</h1>
+      <p id="poweredBy">● Online · Powered by SmartChat</p>
+    </div>
+    <div class="tts-pill" id="ttsPill">🔊 Speaking...</div>
+    <button class="stop-tts-btn" id="stopTtsBtn" onclick="stopTTS()" title="Stop speaking">⏹ Stop</button>
+    <!-- Cart toggle — visible on mobile only -->
+    <button class="cart-toggle-btn" id="cartToggleBtn" onclick="toggleSidebar()" title="View cart" aria-label="Open cart">
+      🛒
+      <span class="cart-badge" id="cartToggleBadge">0</span>
+    </button>
+  </div>
+
+  <div class="timer-banner" id="timerBanner">
+    <div style="display:flex;flex-direction:column;gap:4px;flex:1">
+      <div class="timer-text" id="timerText">Order placed! Auto-confirming in 60s...</div>
+      <div class="timer-bar-wrap"><div class="timer-bar" id="timerBar" style="width:100%"></div></div>
+    </div>
+    <div class="timer-actions">
+      <button class="timer-action-btn timer-confirm" onclick="confirmNow()">✅ Confirm</button>
+      <button class="timer-action-btn timer-cancel"  onclick="cancelOrder()">✕ Cancel</button>
+    </div>
+  </div>
+
+  <!-- messages-wrap holds the intro screen, overlay, and real messages -->
+  <div class="messages-wrap">
+
+    <!-- Intro Screen (shown before first message) -->
+    <div id="introScreen">
+      <div class="intro-logo" id="introAvatar">🍔</div>
+      <div class="intro-title" id="introTitle">Welcome to Restaurant Bot!</div>
+      <div class="intro-subtitle" id="introSubtitle">Hello, I can help you with our menu, prices, and orders. Please feel free to ask!</div>
+      <div class="intro-faqs" id="introFaqs"></div>
+    </div>
+
+    <!-- Training / Inactive overlay (hidden by default) -->
+    <div class="chat-overlay" id="chatOverlay">
+      <div class="overlay-icon" id="overlayIcon">⚙️</div>
+      <div class="overlay-title" id="overlayTitle">Bot is Training</div>
+      <div class="overlay-sub" id="overlaySub">Please wait while the bot learns your data. This may take a few minutes.</div>
+      <div class="overlay-pulse"></div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+  </div>
+
+  <div class="input-area" id="inputArea">
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
+    <div class="input-wrap">
+      <textarea id="msgInput" placeholder="Ask about our menu, prices, or type your order..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+      <div class="listening-badge" id="listeningBadge"><span class="listening-dot"></span>Listening...</div>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ── Item Detail Modal ── -->
+<div id="itemModal" onclick="if(event.target===this||event.target.classList.contains('modal-backdrop'))closeItemModal()">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeItemModal()">✕</button>
+    <div class="modal-img-wrap">
+      <img id="modalImg" src="" alt=""/>
+    </div>
+    <div class="modal-body">
+      <div class="modal-name" id="modalName"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <div class="modal-price-row">
+        <div class="modal-price" id="modalPrice"></div>
+        <div class="modal-qty-wrap">
+          <button class="modal-qty-btn" onclick="changeModalQty(-1)">−</button>
+          <span class="modal-qty-val" id="modalQty">1</span>
+          <button class="modal-qty-btn" onclick="changeModalQty(1)">+</button>
+        </div>
+      </div>
+      <button class="modal-add-btn" id="modalAddBtn" onclick="addFromModal()">🛒 Add to Cart — Rs. <span id="modalTotalPrice">0</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+const API_URL   = '';
+const FALLBACK_IMG = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRl9d4mCkegQn_dnQFq6hiPNFcQowRaBtzacA&s';
+let BOT_AVATAR  = '🍔';
+let BOT_CONFIG  = null;
+
+// ── Which chatbot is this page for? ────────────────────────────────
+// Supports the dashboard's embed/preview URL style (…/123, the bot id
+// as the last path segment) as well as a ?chatbot_id=123 or
+// ?bot_id=123 query param. Falls back to null, in which case the
+// backend uses its own default bot.
+function _resolveBotId() {
+  const params   = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('chatbot_id') || params.get('bot_id');
+  if (fromQuery && /^\d+$/.test(fromQuery)) return parseInt(fromQuery, 10);
+
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  const lastSeg  = segments[segments.length - 1];
+  if (lastSeg && /^\d+$/.test(lastSeg)) return parseInt(lastSeg, 10);
+
+  return null;
+}
+const BOT_ID = _resolveBotId();
+
+const state = {
+  sessionId:             crypto.randomUUID(),
+  cartItems:             [],
+  pendingCart:           [],
+  orderDetails:          {},
+  awaitingOrderDetails:  false,
+  currentField:          null,
+  awaitingConfirmation:  false,
+  timerActive:           false,
+  timerInterval:         null,
+  timerSeconds:          60,
+  phoneMode:             false,   
+};
+
+// TTS state 
+let _ttsCtx=null, _ttsSources=[], _ttsStopReq=false, _ttsRunning=false, _ttsQueue=[];
+let _ttsBlocked = false;   // true while waiting for bot reply — prevents playTTS queueing
+let recognition = null;
+
+// ── Init ─────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const cfgUrl = BOT_ID ? ('/bot-config?bot_id=' + BOT_ID) : '/bot-config';
+    const res = await fetch(cfgUrl);
+    BOT_CONFIG = await res.json();
+    applyConfig(BOT_CONFIG);
+    buildFaqChips(BOT_CONFIG.faqs || []);
+
+    // Check bot status
+    const status = (BOT_CONFIG.status || '').toLowerCase();
+    if (status === 'training') {
+      showOverlay('training');
+    } else if (status === 'inactive' || status === 'disabled') {
+      showOverlay('inactive');
+    }
+
+    document.getElementById('loading').style.display = 'none';
+
+    // Show welcome message in chat (also dismisses intro)
+    // We show intro instead — only send welcome to chat if no FAQs (no intro chips)
+    const hasFaqs = (BOT_CONFIG.faqs || []).length > 0;
+    if (!hasFaqs) {
+      // No FAQs: go straight to chat with welcome message
+      dismissIntro();
+      appendBotMsg(BOT_CONFIG.welcome_msg || 'Welcome! 🍔 Ask me anything about our menu.');
+    }
+    // Else intro screen is already visible with welcome text + FAQ chips
+  } catch(e) {
+    document.getElementById('loading').innerHTML =
+      `<p style="color:#ef4444">⚠️ Failed to load: ${e.message}</p>`;
+  }
+}
+
+function applyConfig(cfg) {
+  const accent  = cfg.theme_color      || '#d4a832';
+  const action  = cfg.btn_color        || '#c0392b';
+  const bg      = cfg.background_color || '#0e0b07';
+  const txt     = cfg.text_color       || '#f0e6d0';
+  const radius  = cfg.btn_radius       || '10px';
+  const bgLight = _isLight(bg);
+  const acLight = _isLight(accent);
+  const actLight= _isLight(action);
+
+  const surface   = bgLight ? _adj(bg,-12) : _adj(bg,12);
+  const surface2  = bgLight ? _adj(bg,-22) : _adj(bg,22);
+  const border    = bgLight ? _adj(bg,-40) : _adj(bg,40);
+  const muted     = bgLight ? _adj(txt, 70): _adj(txt,-80);
+  const userBg    = bgLight ? _adj(accent,50) : _adj(accent,-50);
+  const userTxt   = bgLight ? '#111' : txt;
+  const accentHov = _adj(accent, bgLight ? -15 : 20);
+  const actionHov = _adj(action, bgLight ? -15 : 20);
+  // Header/FAQ strip now fill with the accent color itself, so text/rings
+  // sitting directly on top need their own contrast logic (independent of bg/text settings)
+  const onAccent     = acLight ? '#1a1a1a' : '#ffffff';
+  const onAccentMuted= acLight ? 'rgba(0,0,0,.6)' : 'rgba(255,255,255,.75)';
+  const ringOnAccent = acLight ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.5)';
+
+  let styleEl = document.getElementById('dyn-style');
+  if (!styleEl) { styleEl=document.createElement('style'); styleEl.id='dyn-style'; document.head.appendChild(styleEl); }
+
+  styleEl.textContent = [
+    ':root{',
+    '  --bg:'+bg+'; --surface:'+surface+'; --surface2:'+surface2+'; --border:'+border+';',
+    '  --text:'+txt+'; --muted:'+muted+'; --gold:'+accent+'; --gold-dim:'+_adj(accent,-40)+';',
+    '  --red:'+action+'; --accent:'+accent+'; --accent2:'+action+'; --btn-radius:'+radius+';',
+    '}',
+    'body{background:'+bg+' !important;color:'+txt+' !important;font-family:\''+( cfg.font_family||'DM Sans')+'\',sans-serif !important;font-size:'+(cfg.font_size||14)+'px !important}',
+    // Sidebar
+    '.sidebar{background:'+surface+' !important;border-color:'+border+' !important}',
+    '.sidebar-header{border-color:'+border+' !important;background:'+surface+' !important}',
+    // Topbar — solid theme-color fill
+    '.topbar{background:'+accent+' !important;border-color:'+accentHov+' !important}',
+    '.topbar-info h1{color:'+onAccent+' !important}',
+    '.bot-avatar{border-color:'+ringOnAccent+' !important}',
+    // Chat
+    '.messages{background:'+bg+' !important}',
+    '.messages-wrap{background:'+bg+' !important}',
+    '.msg.bot .bubble{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.msg.user .bubble{background:'+userBg+' !important;color:'+userTxt+' !important}',
+    // Input
+    '.input-area{background:'+surface+' !important;border-color:'+border+' !important}',
+    '.input-area textarea{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.input-area textarea:focus{border-color:'+accent+' !important}',
+    '.phone-wrap{background:'+surface2+' !important;border-color:'+border+' !important}',
+    '.phone-wrap:focus-within{border-color:'+accent+' !important}',
+    '.phone-prefix{color:'+accent+' !important;border-color:'+border+' !important}',
+    '.phone-digits{color:'+txt+' !important}',
+    // Action buttons — use action color
+    '.send-btn{background:'+action+' !important;border-radius:'+radius+' !important;color:'+(actLight?'#000':'#fff')+' !important}',
+    '.send-btn:hover{background:'+actionHov+' !important}',
+    '.add-btn{background:'+action+' !important;color:'+(actLight?'#000':'#fff')+' !important;border-radius:6px !important}',
+    '.add-btn:hover{background:'+actionHov+' !important}',
+    '.btn-primary{background:'+action+' !important;color:'+(actLight?'#000':'#fff')+' !important;border-radius:'+radius+' !important}',
+    '.btn-primary:hover{background:'+actionHov+' !important;transform:translateY(-1px)}',
+    '.btn-danger{border-color:'+action+' !important;color:'+action+' !important}',
+    '.btn-danger:hover{background:'+action+' !important;color:#fff !important}',
+    '.mic-btn{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.mic-btn:hover{border-color:'+accent+' !important;color:'+accent+' !important}',
+    // Cart — use text color (same as chat bubbles)
+    '.cart-item-info strong{color:'+txt+' !important}',
+    '.cart-item-info span{color:'+muted+' !important}',
+    '.cart-empty{color:'+muted+' !important}',
+    '.cart-empty p{color:'+muted+' !important}',
+    '.cart-total{color:'+txt+' !important;font-size:.95rem}',
+    '.qty-display{color:'+txt+' !important}',
+    '.qty-btn{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.qty-btn:hover{background:'+accent+' !important;color:'+(acLight?'#000':'#fff')+' !important}',
+    '.del-btn{color:'+action+' !important}',
+    // Menu cards
+    '.menu-card{background:'+surface2+' !important;border-color:'+border+' !important}',
+    '.menu-card-body h4{color:'+txt+' !important}',
+    '.menu-card-body p{color:'+muted+' !important}',
+    '.price-tag{color:'+txt+' !important}',           
+    // FAQs — solid theme-color fill
+    '.faq-strip{border-color:'+accentHov+' !important;background:'+accent+' !important}',
+    '.faq-label{color:'+onAccentMuted+' !important}',
+    '.faq-chip{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.faq-chip:hover{border-color:'+accent+' !important;color:'+txt+' !important}',
+    // TTS
+    '.tts-pill{border-color:'+accent+' !important;color:'+accent+' !important}',
+    '.stop-tts-btn{border-color:'+action+' !important;color:'+action+' !important;background:'+surface2+' !important}',
+    '.stop-tts-btn:hover{background:'+action+' !important;color:#fff !important}',
+    // Intro screen
+    '#introScreen{background:'+bg+' !important}',
+    '.intro-title{color:'+txt+' !important}',
+    '.intro-subtitle{color:'+muted+' !important}',
+    '.intro-logo{border-color:'+accent+' !important;background:'+surface2+' !important}',
+    '.intro-faq-chip{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.intro-faq-chip:hover{border-color:'+accent+' !important;color:'+txt+' !important;background:'+surface+' !important}',
+    // Overlay
+    '.overlay-title{color:'+txt+' !important}',
+    '.overlay-sub{color:'+muted+' !important}',
+    '.overlay-pulse{background:'+accent+' !important}',
+    // Listening badge
+    '.listening-badge{border-color:'+action+' !important;color:'+action+' !important}',
+    '.listening-dot{background:'+action+' !important}',
+    // Sidebar header fix — use text color not accent for title
+    '.sidebar-header h2{color:'+txt+' !important}',
+    '.cart-count{background:'+action+' !important}',
+    // Cart toggle button (mobile)
+    '.cart-toggle-btn{background:'+surface2+' !important;border-color:'+border+' !important;color:'+txt+' !important}',
+    '.cart-toggle-btn:hover{border-color:'+accent+' !important;color:'+accent+' !important}',
+    '.cart-badge{background:'+action+' !important}',
+    '#sidebarBackdrop{background:rgba(0,0,0,.6) !important}',
+    // Item detail modal
+    '#itemModal .modal-box{background:'+surface+' !important;border-color:'+border+' !important}',
+    '.modal-body{background:'+surface+' !important}',
+    '.modal-img-wrap{background:'+surface2+' !important}',
+    '.modal-name{color:'+txt+' !important}',
+    '.modal-desc{color:'+muted+' !important}',
+    '.modal-price{color:'+txt+' !important}',
+    '.modal-qty-wrap{background:'+surface2+' !important;border-color:'+border+' !important}',
+    '.modal-qty-btn{color:'+txt+' !important}',
+    '.modal-qty-val{color:'+txt+' !important}',
+    '.modal-add-btn{background:'+action+' !important;color:'+(actLight?'#000':'#fff')+' !important;border-radius:'+radius+' !important}',
+    '.modal-add-btn:hover{background:'+actionHov+' !important}',
+  ].join('\n');
+
+  document.getElementById('topbarName').textContent = cfg.name;
+  document.getElementById('introTitle').textContent = 'Welcome to ' + cfg.name + '!';
+  document.getElementById('introSubtitle').textContent = cfg.welcome_msg || 'Hello, I can help you. Please feel free to ask!';
+  document.title = cfg.name;
+
+  // Hide "Powered by SmartChat" for premium plans
+  const pb = document.getElementById('poweredBy');
+  if (pb) {
+    const plan = (cfg.plan || cfg.subscription_plan || '').toLowerCase();
+    const isPremium = plan === 'premium' || plan === 'pro' || plan === 'enterprise' || cfg.hide_branding === true;
+    pb.style.display = isPremium ? 'none' : '';
+  }
+
+  if (cfg.logo_url) {
+    BOT_AVATAR = cfg.logo_url;
+    const av = document.getElementById('topbarAvatar');
+    av.innerHTML = '<img src="'+cfg.logo_url+'" alt="bot" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>';
+    const introAv = document.getElementById('introAvatar');
+    if (introAv) introAv.innerHTML = '<img src="'+cfg.logo_url+'" alt="bot"/>';
+  }
+}
+
+function buildFaqChips(faqs) {
+  // Sidebar FAQs
+  if (faqs.length) {
+    const strip = document.getElementById('faqStrip');
+    const chips = document.getElementById('faqChips');
+    strip.style.display = 'block';
+    chips.innerHTML = '';
+    faqs.forEach(faq => {
+      const btn = document.createElement('button');
+      btn.className = 'faq-chip';
+      btn.textContent = faq.question;
+      btn.onclick = () => { dismissIntro(); document.getElementById('msgInput').value = faq.question; sendMessage(); };
+      chips.appendChild(btn);
+    });
+  }
+
+  // Intro screen FAQ chips (show up to 4)
+  const introContainer = document.getElementById('introFaqs');
+  if (introContainer && faqs.length) {
+    introContainer.innerHTML = '';
+    faqs.slice(0, 4).forEach(faq => {
+      const btn = document.createElement('button');
+      btn.className = 'intro-faq-chip';
+      btn.textContent = faq.question;
+      btn.onclick = () => {
+        dismissIntro();
+        document.getElementById('msgInput').value = faq.question;
+        sendMessage();
+      };
+      introContainer.appendChild(btn);
+    });
+  }
+}
+
+// ── Intro screen ─────────────────────────────────────────────────
+let _introDismissed = false;
+function dismissIntro() {
+  if (_introDismissed) return;
+  _introDismissed = true;
+  const s = document.getElementById('introScreen');
+  if (s) { s.style.opacity='0'; s.style.transition='opacity .3s'; setTimeout(()=>s.classList.add('hidden'),300); }
+}
+
+// ── Bot status overlay ────────────────────────────────────────────
+function showOverlay(mode) {
+  // mode: 'training' | 'inactive'
+  const overlay = document.getElementById('chatOverlay');
+  const icon    = document.getElementById('overlayIcon');
+  const title   = document.getElementById('overlayTitle');
+  const sub     = document.getElementById('overlaySub');
+  if (mode === 'training') {
+    icon.textContent  = '⚙️';
+    title.textContent = 'Bot is Training';
+    sub.textContent   = 'Please wait while the bot learns your data. This may take a few minutes.';
+  } else {
+    icon.textContent  = '😴';
+    title.textContent = 'Bot is Inactive';
+    sub.textContent   = 'This bot is currently unavailable. Please check back later.';
+  }
+  overlay.classList.add('show');
+  document.getElementById('inputArea').style.pointerEvents = 'none';
+  document.getElementById('inputArea').style.opacity = '0.4';
+  // Also grey out FAQ chips
+  document.querySelectorAll('.faq-chip,.intro-faq-chip').forEach(c=>c.style.pointerEvents='none');
+}
+function hideOverlay() {
+  document.getElementById('chatOverlay').classList.remove('show');
+  document.getElementById('inputArea').style.pointerEvents = '';
+  document.getElementById('inputArea').style.opacity = '';
+  document.querySelectorAll('.faq-chip,.intro-faq-chip').forEach(c=>c.style.pointerEvents='');
+}
+
+// ── Messages ─────────────────────────────────────────────────────
+const $msg = () => document.getElementById('messages');
+
+function _makeAvatar(isBot) {
+  const div = document.createElement('div');
+  div.className = 'msg-avatar-wrap';
+  if (isBot && typeof BOT_AVATAR === 'string' && BOT_AVATAR.startsWith('http')) {
+    div.innerHTML = '<img src="'+BOT_AVATAR+'" alt="bot" onerror="this.parentElement.textContent=\'🍔\'"/>';
+  } else {
+    div.textContent = isBot ? '🍔' : '👤';
+  }
+  return div;
+}
+
+function appendBotMsg(html, raw=false) {
+  dismissIntro();
+  const wrap = document.createElement('div'); wrap.className = 'msg bot';
+  const body = document.createElement('div'); body.className = 'msg-body';
+  const bbl  = document.createElement('div'); bbl.className = 'bubble';
+  // Strip markdown bold/italic/headings unless raw HTML
+  const cleaned = raw ? html : stripMd(escHtml(html)).replace(/\n/g,'<br>');
+  bbl.innerHTML = cleaned;
+  body.appendChild(bbl);
+  wrap.appendChild(_makeAvatar(true));
+  wrap.appendChild(body);
+  $msg().appendChild(wrap);
+  scrollBottom();
+  playTTS(html);
+  return bbl;
+}
+
+function appendUserMsg(text) {
+  const wrap = document.createElement('div'); wrap.className = 'msg user';
+  const body = document.createElement('div'); body.className = 'msg-body';
+  const bbl  = document.createElement('div'); bbl.className = 'bubble';
+  bbl.textContent = text;
+  body.appendChild(bbl);
+  wrap.appendChild(_makeAvatar(false));
+  wrap.appendChild(body);
+  $msg().appendChild(wrap);
+  scrollBottom();
+}
+
+function appendTyping() {
+  const wrap = document.createElement('div'); wrap.className = 'msg bot'; wrap.id = 'typing';
+  const body = document.createElement('div'); body.className = 'msg-body';
+  const bbl  = document.createElement('div'); bbl.className = 'bubble';
+  bbl.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+  body.appendChild(bbl);
+  wrap.appendChild(_makeAvatar(true));
+  wrap.appendChild(body);
+  $msg().appendChild(wrap);
+  scrollBottom();
+}
+function removeTyping() { const t=document.getElementById('typing'); if(t) t.remove(); }
+
+function renderMenuItems(msgText, items) {
+  const bbl = appendBotMsg(msgText);
+  if (!items || !items.length) return;
+  const grid = document.createElement('div'); grid.className = 'menu-grid';
+  items.forEach(item => {
+    const card = document.createElement('div'); card.className = 'menu-card';
+    const imgSrc = item.img || FALLBACK_IMG;
+    const shortDesc = (item.desc || '').substring(0, 60) + (item.desc && item.desc.length > 60 ? '…' : '');
+
+    card.innerHTML =
+      '<div class="menu-card-img-wrap">'+
+        '<img src="'+imgSrc+'" alt="'+escHtml(item.name||'')+'" onerror="this.src=\''+FALLBACK_IMG+'\'"/>'+
+      '</div>'+
+      '<div class="menu-card-body">'+
+        '<h4>'+escHtml(item.name||'')+'</h4>'+
+        '<p>'+escHtml(shortDesc)+'</p>'+
+        '<div class="menu-card-footer">'+
+          '<span class="price-tag">Rs. '+(item.price||0)+'</span>'+
+          '<button class="add-btn" data-item="'+escHtml(JSON.stringify(item))+'">+ Add</button>'+
+        '</div>'+
+      '</div>';
+
+    // Clicking anywhere on card (except Add button) → open detail modal
+    card.addEventListener('click', e => {
+      if (e.target.classList.contains('add-btn') || e.target.closest('.add-btn')) {
+        e.stopPropagation();
+        addToCart(item);
+        return;
+      }
+      openItemModal(item);
+    });
+
+    grid.appendChild(card);
+  });
+  bbl.appendChild(grid);
+  scrollBottom();
+}
+
+// ── Item Detail Modal ────────────────────────────────────────────
+let _modalItem = null;
+let _modalQty  = 1;
+
+function openItemModal(item) {
+  _modalItem = item;
+  _modalQty  = 1;
+  const imgSrc = item.img || FALLBACK_IMG;
+  document.getElementById('modalImg').src        = imgSrc;
+  document.getElementById('modalImg').onerror    = () => { document.getElementById('modalImg').src = FALLBACK_IMG; };
+  document.getElementById('modalName').textContent  = item.name  || '';
+  document.getElementById('modalDesc').textContent  = item.desc  || 'No description available.';
+  document.getElementById('modalPrice').textContent = 'Rs. ' + (item.price || 0);
+  document.getElementById('modalQty').textContent   = _modalQty;
+  document.getElementById('modalTotalPrice').textContent = (item.price || 0) * _modalQty;
+  _applyModalTheme();
+  document.getElementById('itemModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeItemModal() {
+  document.getElementById('itemModal').classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { _modalItem = null; }, 300);
+}
+
+function changeModalQty(delta) {
+  _modalQty = Math.max(1, _modalQty + delta);
+  document.getElementById('modalQty').textContent = _modalQty;
+  document.getElementById('modalTotalPrice').textContent = (_modalItem?.price || 0) * _modalQty;
+}
+
+function addFromModal() {
+  if (!_modalItem) return;
+  for (let i = 0; i < _modalQty; i++) addToCart(_modalItem);
+  closeItemModal();
+  showToast('Added ' + _modalQty + 'x ' + _modalItem.name + ' to cart! 🛒');
+}
+
+function _applyModalTheme() {
+  if (!BOT_CONFIG) return;
+  const accent = BOT_CONFIG.theme_color || '#d4a832';
+  const action = BOT_CONFIG.btn_color   || '#c0392b';
+  const bg     = BOT_CONFIG.background_color || '#0e0b07';
+  const txt    = BOT_CONFIG.text_color  || '#f0e6d0';
+  const bgLight = _isLight(bg);
+  const acLight = _isLight(accent);
+  const surface  = bgLight ? _adj(bg,-12) : _adj(bg,12);
+  const surface2 = bgLight ? _adj(bg,-22) : _adj(bg,22);
+  const border   = bgLight ? _adj(bg,-40) : _adj(bg,40);
+  const muted    = bgLight ? _adj(txt, 70) : _adj(txt,-80);
+  const box = document.querySelector('#itemModal .modal-box');
+  if (box) {
+    box.style.background   = surface;
+    box.style.borderColor  = border;
+  }
+  const mb = document.querySelector('.modal-body');
+  if (mb) mb.style.background = surface;
+  document.getElementById('modalName').style.color  = txt;
+  document.getElementById('modalDesc').style.color  = muted;
+  document.getElementById('modalPrice').style.color = txt;
+  document.getElementById('modalQty').style.color   = txt;
+  const addBtn = document.getElementById('modalAddBtn');
+  if (addBtn) {
+    addBtn.style.background = action;
+    addBtn.style.color      = _isLight(action) ? '#000' : '#fff';
+    addBtn.style.borderRadius = BOT_CONFIG.btn_radius || '12px';
+  }
+  const qtyWrap = document.querySelector('.modal-qty-wrap');
+  if (qtyWrap) { qtyWrap.style.background = surface2; qtyWrap.style.borderColor = border; }
+  document.querySelectorAll('.modal-qty-btn').forEach(b => b.style.color = txt);
+  const iw = document.querySelector('.modal-img-wrap');
+  if (iw) iw.style.background = surface2;
+}
+
+function scrollBottom() { const m=$msg(); m.scrollTop=m.scrollHeight; }
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function stripMd(s) {
+  return s
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g,     '$1')
+    .replace(/^#+\s*/gm,        '')
+    .replace(/ITEMS:\[[^\]]*\]/g, '');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── Phone input ───────────────────────────────────────────────────
+function showPhoneInput() {
+  state.phoneMode = true;
+  const inputArea = document.getElementById('inputArea');
+  inputArea.innerHTML = `
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+    <div class="phone-wrap" id="phoneWrap">
+      <span class="phone-prefix">+92</span>
+      <input class="phone-digits" id="phoneDigits" type="tel" maxlength="10"
+        placeholder="3001234567" inputmode="numeric"
+        onkeydown="if(event.key==='Enter'){submitPhone()}"
+        oninput="this.value=this.value.replace(/[^0-9]/g,'')"/>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="submitPhone()">➤</button>`;
+  setTimeout(() => document.getElementById('phoneDigits')?.focus(), 100);
+}
+
+function hidePhoneInput() {
+  state.phoneMode = false;
+  const inputArea = document.getElementById('inputArea');
+  inputArea.innerHTML = `
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Voice input">🎤</button>
+    <div class="input-wrap">
+      <textarea id="msgInput" placeholder="Ask about our menu, prices, or type your order..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+      <div class="listening-badge" id="listeningBadge"><span class="listening-dot"></span>Listening...</div>
+    </div>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>`;
+  setTimeout(() => document.getElementById('msgInput')?.focus(), 100);
+}
+
+async function submitPhone() {
+  const digits = (document.getElementById('phoneDigits')?.value || '').trim();
+  if (!digits || digits.length < 9) {
+    showToast('Enter 9-10 digits after +92'); return;
+  }
+  const fullPhone = '+92' + digits;
+  hidePhoneInput();
+  await _sendToApi(fullPhone);
+}
+
+// ── Sidebar toggle (mobile) ──────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarBackdrop').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  const cb = document.getElementById('sidebarCloseBtn');
+  if (cb) cb.style.display = 'flex';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function toggleSidebar() {
+  const isOpen = document.getElementById('sidebar').classList.contains('open');
+  isOpen ? closeSidebar() : openSidebar();
+}
+
+// ── Cart ─────────────────────────────────────────────────────────
+function addToCart(item) {
+  const ex = state.cartItems.find(c => c.product === item.name);
+  if (ex) { ex.qty++; } else {
+    state.cartItems.push({ product:item.name, price:item.price, qty:1, img:item.img||FALLBACK_IMG });
+  }
+  updateCartUI();
+  showToast('Added '+item.name+' to cart! 🛒');
+  // On mobile: auto-open sidebar to show cart
+  if (window.innerWidth <= 640) openSidebar();
+}
+function changeQty(idx,delta) {
+  state.cartItems[idx].qty += delta;
+  if (state.cartItems[idx].qty <= 0) state.cartItems.splice(idx,1);
+  updateCartUI();
+}
+function removeItem(idx) { state.cartItems.splice(idx,1); updateCartUI(); }
+function clearCart() { state.cartItems=[]; state.pendingCart=[]; updateCartUI(); }
+function checkoutCart() {
+  if (!state.cartItems.length) { showToast('Cart is empty!'); return; }
+  document.getElementById('msgInput').value = 'I want to order these items';
+  sendMessage();
+}
+function updateCartUI() {
+  const list=document.getElementById('cartList');
+  const footer=document.getElementById('cartFooter');
+  const count=document.getElementById('cartCount');
+  const total=document.getElementById('grandTotal');
+  const all=[...state.cartItems];
+  const qty=all.reduce((s,i)=>s+i.qty,0);
+  const grand=all.reduce((s,i)=>s+i.price*i.qty,0);
+  count.textContent=qty;
+  total.textContent='Rs. '+grand;
+
+  // Sync mobile toggle badge
+  const tb=document.getElementById('cartToggleBadge');
+  if (tb) { tb.textContent=qty; tb.classList.toggle('show', qty>0); }
+
+  if (!all.length) {
+    list.innerHTML='<div class="cart-empty"><div class="icon">🍽️</div><p>Your cart is empty.<br>Browse our menu!</p></div>';
+    footer.style.display='none'; return;
+  }
+  footer.style.display='block';
+  list.innerHTML='';
+  all.forEach((item,idx) => {
+    const el=document.createElement('div'); el.className='cart-item';
+    el.innerHTML='<img src="'+(item.img||FALLBACK_IMG)+'" alt="'+escHtml(item.product)+'" onerror="this.src=\''+FALLBACK_IMG+'\'"/>'+
+      '<div class="cart-item-info">'+
+        '<strong>'+escHtml(item.product)+'</strong>'+
+        '<span>Rs. '+item.price+'</span>'+
+        '<div class="qty-controls">'+
+          '<button class="qty-btn" onclick="changeQty('+idx+',-1)">−</button>'+
+          '<span class="qty-display">'+item.qty+'</span>'+
+          '<button class="qty-btn" onclick="changeQty('+idx+',1)">+</button>'+
+          '<button class="del-btn" onclick="removeItem('+idx+')">🗑</button>'+
+        '</div>'+
+      '</div>';
+    list.appendChild(el);
+  });
+}
+
+// ── Timer ─────────────────────────────────────────────────────────
+function startTimer() {
+  state.timerActive=true; state.timerSeconds=60;
+  document.getElementById('timerBanner').classList.add('active');
+  document.getElementById('inputArea').style.display='none';
+  document.getElementById('timerBar').style.width='100%';
+  state.timerInterval=setInterval(()=>{
+    state.timerSeconds--;
+    const pct=(state.timerSeconds/60)*100;
+    document.getElementById('timerBar').style.width=pct+'%';
+    document.getElementById('timerText').textContent='Order placed! Auto-confirming in '+state.timerSeconds+'s...';
+    if (state.timerSeconds<=0) { clearInterval(state.timerInterval); confirmNow(); }
+  },1000);
+}
+function stopTimer() {
+  clearInterval(state.timerInterval); state.timerActive=false;
+  document.getElementById('timerBanner').classList.remove('active');
+  document.getElementById('inputArea').style.display='flex';
+  document.getElementById('timerBar').style.width='100%';
+}
+async function cancelOrder() {
+  stopTimer(); state.cartItems=[]; state.orderDetails={}; state.awaitingOrderDetails=false;
+  updateCartUI(); appendBotMsg('Order cancel ho gaya. Dobara order karo! 😊');
+}
+async function confirmNow() {
+  stopTimer();
+  try {
+    const res=await fetch(API_URL+'/finalize',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({session_id:state.sessionId,order_details:state.orderDetails,cart_items:state.cartItems,bot_id:BOT_ID})});
+    const data=await res.json();
+    const receipt=state.cartItems.map(i=>'• '+i.qty+'x '+i.product+' @ Rs.'+i.price+' = Rs.'+(i.price*i.qty)).join('<br>');
+    const total=state.cartItems.reduce((s,i)=>s+i.price*i.qty,0);
+    appendBotMsg('✅ <strong>Order Confirmed!</strong><br><br>🧾 <strong>Receipt:</strong><br>'+receipt+'<br><br>💰 <strong>Grand Total: Rs.'+total+'</strong><br>👤 '+( state.orderDetails.name||'')+' | 📍 '+( state.orderDetails.address||''),true);
+    state.cartItems=[]; state.orderDetails={}; updateCartUI();
+  } catch(e) { appendBotMsg('Order confirm mein error. Please try again.'); }
+}
+
+// ── Send ─────────────────────────────────────────────────────────
+async function sendMessage() {
+  stopTTS();
+  dismissIntro();
+  if (state.phoneMode) return;
+  const input=document.getElementById('msgInput');
+  if (!input) return;
+  const text=input.value.trim();
+  if (!text||state.timerActive) return;
+  input.disabled=true; input.value=''; input.style.height='auto';
+  await _sendToApi(text);
+  input.disabled=false; input.focus();
+}
+
+async function _sendToApi(text) {
+  stopTTS();           // stop any currently playing speech immediately
+  _ttsBlocked = true;  // block TTS until the bot replies
+  appendUserMsg(text);
+  appendTyping();
+  await new Promise(r=>setTimeout(r,0));
+
+  try {
+    const res=await fetch(API_URL+'/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        session_id: state.sessionId, message: text,
+        cart_items: state.cartItems, order_details: state.orderDetails,
+        awaiting_order_details: state.awaitingOrderDetails,
+        current_field: state.currentField,
+        pending_cart: state.pendingCart,
+        awaiting_confirmation: state.awaitingConfirmation,
+        bot_id: BOT_ID,
+      })});
+    const data=await res.json();
+    removeTyping();
+
+    // Apply state
+    if (data.state) {
+      const s=data.state;
+      if (s.awaiting_order_details!==undefined) state.awaitingOrderDetails=s.awaiting_order_details;
+      if (s.current_field!==undefined)          state.currentField=s.current_field;
+      if (s.order_details)                       state.orderDetails=s.order_details;
+      if (s.pending_cart)                        state.pendingCart=s.pending_cart;
+      if (s.cart_items)                        { state.cartItems=s.cart_items; updateCartUI(); }
+      if (s.awaiting_confirmation!==undefined)   state.awaitingConfirmation=s.awaiting_confirmation;
+      if (s.timer_active)                        startTimer();
+    }
+
+    if (state.awaitingOrderDetails && state.currentField==='phone') {
+      showPhoneInput();
+    } else if (state.phoneMode && state.currentField!=='phone') {
+      hidePhoneInput();
+    }
+
+    if (data.new_items && data.new_items.length) {
+      data.new_items.forEach(item=>{
+        if (!state.cartItems.find(c=>c.product===item.product))
+          state.cartItems.push(item);
+      });
+      updateCartUI();
+    }
+
+    // Unblock TTS right before appending the bot reply so only this reply speaks
+    _ttsBlocked = false;
+
+    switch(data.type) {
+      case 'menu_items':
+        renderMenuItems(data.message, data.items);
+        break;
+      default:
+        appendBotMsg(data.message||'...');
+    }
+  } catch(err) {
+    removeTyping();
+    _ttsBlocked = false;
+    appendBotMsg('Connection error. Please check the API server is running.');
+    console.error(err);
+  }
+}
+
+// ── TTS streaming ────────────────────────────────────────────────
+function _getTtsCtx() {
+  if (!_ttsCtx || _ttsCtx.state==='closed') _ttsCtx = new AudioContext({sampleRate:24000});
+  return _ttsCtx;
+}
+
+function _setPill(on) {
+  document.getElementById('ttsPill').classList.toggle('show', on);
+  document.getElementById('stopTtsBtn').classList.toggle('show', on);
+}
+
+function stopTTS() {
+  _ttsStopReq = true; _ttsQueue = [];
+  // Close the AudioContext — this immediately silences all pre-scheduled audio buffers.
+  // Simply calling s.stop() on sources is not enough because chunks already
+  // scheduled into the future (via src.start(futureTime)) keep playing.
+  if (_ttsCtx) {
+    try { _ttsCtx.close(); } catch(e) {}
+    _ttsCtx = null;
+  }
+  _ttsSources = []; _ttsRunning = false;
+  _setPill(false);
+}
+
+async function playTTS(text) {
+  if (!text || _ttsBlocked) return;
+  const clean = text.replace(/\{[^}]+\}/g,'').replace(/\*\*/g,'').replace(/#{1,3} /g,'').trim();
+  if (!clean) return;
+  _ttsQueue.push(clean);
+  if (!_ttsRunning) _drainTTS();
+}
+
+async function _drainTTS() {
+  if (!_ttsQueue.length) { _ttsRunning=false; _setPill(false); return; }
+  _ttsRunning = true; _ttsStopReq = false;
+  const text = _ttsQueue.shift();
+  _setPill(true);
+  try {
+    const res = await fetch(API_URL+'/tts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text})});
+    if (!res.ok) throw 0;
+    const ctx = _getTtsCtx();
+    if (ctx.state==='suspended') await ctx.resume();
+
+    let nextAt = ctx.currentTime + 0.02;
+    let leftover = new Uint8Array(0);
+    const SR = 24000;
+
+    const scheduleChunk = (bytes) => {
+      const samples = Math.floor(bytes.length/2); if (!samples) return;
+      const f32 = new Float32Array(samples);
+      const dv  = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+      for (let i=0; i<samples; i++) f32[i] = dv.getInt16(i*2,true)/32768;
+      const buf = ctx.createBuffer(1, samples, SR);
+      buf.copyToChannel(f32, 0);
+      const src = ctx.createBufferSource();
+      src.buffer = buf; src.connect(ctx.destination);
+      const startAt = Math.max(nextAt, ctx.currentTime);
+      src.start(startAt);
+      _ttsSources.push(src);
+      if (_ttsSources.length > 60) _ttsSources = _ttsSources.slice(-30);
+      nextAt = startAt + buf.duration;
+    };
+
+    const reader = res.body.getReader();
+    while (true) {
+      if (_ttsStopReq) break;
+      const {done, value} = await reader.read(); if (done) break;
+      const merged = new Uint8Array(leftover.length + value.length);
+      merged.set(leftover); merged.set(value, leftover.length);
+      const even = merged.length - (merged.length % 2);
+      scheduleChunk(merged.slice(0, even));
+      leftover = merged.slice(even);
+    }
+    if (!_ttsStopReq && leftover.length >= 2) scheduleChunk(leftover);
+
+    if (!_ttsStopReq) {
+      const wait = (nextAt - ctx.currentTime) * 1000 + 150;
+      if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    }
+  } catch(e) { /* TTS  */ }
+
+  if (!_ttsStopReq) _drainTTS();
+  else { _ttsRunning=false; _setPill(false); }
+}
+
+// ── Mic ──────────────────────────────────────────────────────────
+function _setListening(on) {
+  const badge = document.getElementById('listeningBadge');
+  const inp   = document.getElementById('msgInput');
+  if (!badge) return;
+  badge.classList.toggle('show', on);
+  if (inp) {
+    inp.placeholder = on ? '' : 'Ask about our menu, prices, or type your order...';
+    inp.style.opacity = on ? '0.3' : '1';
+  }
+}
+
+function toggleMic() {
+  const btn = document.getElementById('micBtn');
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    alert('Speech recognition not supported in this browser.'); return;
+  }
+  if (recognition && btn.classList.contains('recording')) {
+    recognition.stop(); btn.classList.remove('recording'); _setListening(false); return;
+  }
+  stopTTS();
+
+  const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SRClass();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onresult = e => {
+    const inp = document.getElementById('msgInput');
+    if (!inp) return;
+    let interim = '', final = '';
+    for (const r of e.results) {
+      if (r.isFinal) final += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    inp.value = final || interim;
+    inp.style.height = 'auto';
+    inp.style.height = Math.min(inp.scrollHeight, 100) + 'px';
+  };
+
+  recognition.onend = () => {
+    btn.classList.remove('recording');
+    _setListening(false);
+    const inp = document.getElementById('msgInput');
+    if (inp && inp.value.trim()) sendMessage();
+  };
+
+  recognition.onerror = () => { btn.classList.remove('recording'); _setListening(false); };
+
+  recognition.start();
+  btn.classList.add('recording');
+  _setListening(true);
+}
+
+// ── Color helpers ────────────────────────────────────────────────
+function _isLight(hex){
+  const n=parseInt((hex||'#000').replace('#','').padEnd(6,'0'),16);
+  return(0.299*((n>>16)&255)+0.587*((n>>8)&255)+0.114*(n&255))>155;
+}
+function _adj(hex,amt){
+  const n=parseInt((hex||'#000000').replace('#',''),16);
+  const r=Math.min(255,Math.max(0,((n>>16)&255)+amt));
+  const g=Math.min(255,Math.max(0,((n>>8)&255)+amt));
+  const b=Math.min(255,Math.max(0,(n&255)+amt));
+  return'#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Boot ─────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeItemModal(); closeSidebar(); } });
+
+// Show/hide sidebar close button based on viewport
+function _handleResize() {
+  const isMobile = window.innerWidth <= 640;
+  const cb = document.getElementById('sidebarCloseBtn');
+  if (cb) cb.style.display = isMobile ? 'flex' : 'none';
+  // On desktop: always close drawer if it was open
+  if (!isMobile) closeSidebar();
+}
+window.addEventListener('resize', _handleResize);
+_handleResize();
+
+// Swipe-left-to-close sidebar
+(function(){
+  let _sx=0;
+  const sb = document.getElementById('sidebar');
+  if (!sb) return;
+  sb.addEventListener('touchstart', e=>{ _sx=e.touches[0].clientX; },{passive:true});
+  sb.addEventListener('touchend',   e=>{ if(_sx - e.changedTouches[0].clientX > 60) closeSidebar(); },{passive:true});
+})();
+
+updateCartUI();
+init();
+</script>
+</body>
+</html>

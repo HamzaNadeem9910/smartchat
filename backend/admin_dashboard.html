@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SmartChat — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f5f6fa;--sidebar:#0f1117;--sidebar-w:240px;--topbar-h:60px;
+  --white:#fff;--surface:#fff;--border:#e8eaef;--border2:#d1d5e0;
+  --text:#0f1117;--text2:#4b5468;--muted:#8b93a7;
+  --accent:#2563eb;--accent-l:#eff4ff;
+  --green:#16a34a;--green-l:#f0fdf4;
+  --amber:#d97706;--amber-l:#fffbeb;
+  --red:#dc2626;--red-l:#fff1f1;
+  --violet:#7c3aed;--violet-l:#f5f3ff;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(15,17,23,.08),0 4px 12px rgba(15,17,23,.04);
+  --shadow-md:0 4px 20px rgba(15,17,23,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-size:14px}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font-family:inherit}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ── LOGIN ── */
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f1117 0%,#1a2035 100%);z-index:1000}
+.login-wrap{width:100%;max-width:420px;padding:24px}
+.login-brand{text-align:center;margin-bottom:36px}
+.l-icon{width:52px;height:52px;border-radius:14px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:14px;box-shadow:0 8px 24px rgba(37,99,235,.4)}
+.l-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.l-sub{font-size:13px;color:#6b7280;margin-top:4px}
+.login-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-lg);padding:32px;backdrop-filter:blur(20px)}
+.login-card .lbl{display:block;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.login-card input{width:100%;padding:12px 14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);color:#fff;font-size:14px;outline:none;transition:border-color .2s;margin-bottom:16px}
+.login-card input:focus{border-color:var(--accent)}
+.login-card input::placeholder{color:#6b7280}
+.btn-login{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 4px 14px rgba(37,99,235,.4)}
+.btn-login:hover{background:#1d4ed8;transform:translateY(-1px)}
+#login-err{color:#f87171;font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+
+/* ── SHELL ── */
+#app{display:none;height:100vh;overflow:hidden}
+.shell{display:flex;height:100vh;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:left .25s ease;z-index:50}
+.sb-head{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
+.sb-icon{width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 4px 12px rgba(37,99,235,.4)}
+.sb-title{font-size:15px;font-weight:800;color:#fff;letter-spacing:-.4px}
+.sb-ver{font-size:10px;color:#6b7280}
+.nav-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#4b5468;padding:18px 16px 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;margin:1px 8px;border-radius:8px;font-size:13px;font-weight:600;color:#8b93a7;cursor:pointer;transition:all .15s;white-space:nowrap}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#d1d5db}
+.nav-item.active{background:rgba(37,99,235,.2);color:#93b4fd}
+.nav-item.active svg{opacity:1}
+.sb-foot{margin-top:auto;padding:14px;border-top:1px solid rgba(255,255,255,.06)}
+.adm-info{display:flex;align-items:center;gap:9px}
+.adm-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--violet));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.adm-name{font-size:12px;font-weight:700;color:#d1d5db;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adm-role{font-size:10px;color:#6b7280}
+.btn-logout{margin-left:auto;background:none;border:none;color:#6b7280;cursor:pointer;padding:4px;border-radius:6px;transition:color .2s;flex-shrink:0}
+.btn-logout:hover{color:#f87171}
+
+/* ── MAIN ── */
+.main-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:var(--topbar-h);flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:14px}
+.topbar-l{display:flex;align-items:center;gap:11px}
+.menu-toggle{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:6px;border-radius:6px}
+.menu-toggle svg{width:20px;height:20px}
+.pg-title{font-size:17px;font-weight:800;letter-spacing:-.3px}
+.pg-sub{font-size:12px;color:var(--muted)}
+.topbar-r{display:flex;align-items:center;gap:8px}
+.btn-ref{display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s}
+.btn-ref:hover{background:var(--bg);border-color:var(--border2)}
+.btn-ref svg{width:14px;height:14px}
+
+.pages{flex:1;overflow-y:auto;overflow-x:hidden}
+.page{display:none;padding:22px;animation:fadeUp .2s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:13px;margin-bottom:20px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:10px}
+.stat-bot{display:flex;align-items:flex-end;justify-content:space-between}
+.stat-val{font-size:26px;font-weight:800;letter-spacing:-1px;line-height:1}
+.stat-ico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.s-blue .stat-val{color:var(--accent)}.s-blue .stat-ico{background:var(--accent-l)}
+.s-green .stat-val{color:var(--green)}.s-green .stat-ico{background:var(--green-l)}
+.s-amber .stat-val{color:var(--amber)}.s-amber .stat-ico{background:var(--amber-l)}
+.s-red .stat-val{color:var(--red)}.s-red .stat-ico{background:var(--red-l)}
+.s-violet .stat-val{color:var(--violet)}.s-violet .stat-ico{background:var(--violet-l)}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.card-title{font-size:14px;font-weight:700}
+.card-ct{font-size:12px;color:var(--muted)}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:560px}
+th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 16px;text-align:left;background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .1s}
+tbody tr:hover td{background:#f8f9fc}
+.td-name{font-weight:700;color:var(--text)}
+.td-email{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--text2);margin-top:1px}
+.td-mono{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.bg-green{background:var(--green-l);color:var(--green)}.bg-green::before{background:var(--green)}
+.bg-amber{background:var(--amber-l);color:var(--amber)}.bg-amber::before{background:var(--amber)}
+.bg-red{background:var(--red-l);color:var(--red)}.bg-red::before{background:var(--red)}
+.bg-blue{background:var(--accent-l);color:var(--accent)}.bg-blue::before{background:var(--accent)}
+.bg-violet{background:var(--violet-l);color:var(--violet)}.bg-violet::before{background:var(--violet)}
+.bg-gray{background:var(--bg);color:var(--muted);border:1px solid var(--border)}.bg-gray::before{background:var(--muted)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn svg{width:13px;height:13px;flex-shrink:0}
+.btn-sm{padding:5px 9px;font-size:12px;border-radius:6px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.28)}
+.btn-primary:hover{background:#1d4ed8}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg);border-color:var(--border2)}
+.btn-g{background:var(--green-l);color:var(--green);border:1px solid #bbf7d0}.btn-g:hover{background:#dcfce7}
+.btn-a{background:var(--amber-l);color:var(--amber);border:1px solid #fde68a}.btn-a:hover{background:#fef3c7}
+.btn-r{background:var(--red-l);color:var(--red);border:1px solid #fecaca}.btn-r:hover{background:#fee2e2}
+.btn-v{background:var(--violet-l);color:var(--violet);border:1px solid #ddd6fe}.btn-v:hover{background:#ede9fe}
+.btn:disabled{opacity:.55;cursor:not-allowed}
+
+/* ── ACTIONS ── */
+.acts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+
+/* ── SEARCH ── */
+.srch{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:7px 12px}
+.srch svg{width:14px;height:14px;color:var(--muted);flex-shrink:0}
+.srch input{border:none;background:transparent;font-size:13px;color:var(--text);width:175px;outline:none}
+.srch input::placeholder{color:var(--muted)}
+
+/* ── INLINE SELECT ── */
+.isel{background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;padding:5px 8px;cursor:pointer;outline:none;transition:border-color .2s}
+.isel:focus{border-color:var(--accent)}
+
+/* ── FORMS ── */
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px}
+.fi{width:100%;padding:10px 13px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+.fi:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+textarea.fi{resize:vertical;min-height:78px}
+select.fi{cursor:pointer}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,17,23,.45);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:500px;box-shadow:var(--shadow-md);position:relative;animation:mIn .2s ease;max-height:90vh;overflow-y:auto}
+@keyframes mIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.m-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--border)}
+.m-title{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.m-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:4px;border-radius:6px;transition:all .15s}
+.m-close:hover{background:var(--bg);color:var(--text)}
+.m-body{padding:22px}
+.m-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px;border-top:1px solid var(--border)}
+
+/* ── INFO BOX ── */
+.info-box{padding:12px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:16px}
+.info-blue{background:var(--accent-l);border:1px solid #bfdbfe;color:#1e40af}
+.info-green{background:var(--green-l);border:1px solid #bbf7d0;color:var(--green)}
+.info-amber{background:var(--amber-l);border:1px solid #fde68a;color:var(--amber)}
+
+/* ── PLAN CARDS ── */
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px}
+.plan-card{border:2px solid var(--border);border-radius:var(--radius-lg);padding:18px;cursor:pointer;transition:all .2s;background:var(--surface)}
+.plan-card:hover{border-color:var(--accent)}
+.plan-card.sel{border-color:var(--accent);background:var(--accent-l)}
+.plan-name{font-size:14px;font-weight:800;margin-bottom:3px}
+.plan-price{font-size:18px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.plan-desc{font-size:11px;color:var(--muted)}
+
+/* ── MAIL TEMPLATES ── */
+.tmpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.tmpl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:0}
+.tc-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.tc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.tc-title{font-size:14px;font-weight:700}
+.tc-desc{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5}
+.tc-preview{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11.5px;color:var(--text2);line-height:1.6;margin-bottom:12px;height:70px;overflow:hidden;position:relative}
+.tc-preview::after{content:'';position:absolute;bottom:0;left:0;right:0;height:20px;background:linear-gradient(transparent,var(--bg))}
+
+/* ── SEND BUTTON WITH SPINNER ── */
+.send-btn{width:100%;padding:10px;border-radius:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;background:var(--accent);color:#fff}
+.send-btn:hover{background:#1d4ed8}
+.send-btn:disabled{opacity:.6;cursor:not-allowed}
+.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── NOTIF PAGE ── */
+.notif-section{margin-bottom:28px}
+.ns-title{font-size:15px;font-weight:800;letter-spacing:-.3px;margin-bottom:3px}
+.ns-sub{font-size:12px;color:var(--muted);margin-bottom:16px}
+.divider{height:1px;background:var(--border);margin:24px 0}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:22px;right:22px;z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.t-item{display:flex;align-items:center;gap:10px;background:#0f1117;color:#fff;border-radius:10px;padding:12px 16px;font-size:13px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);border-left:3px solid transparent;animation:tIn .3s ease forwards;pointer-events:auto;max-width:300px}
+.t-item.success{border-left-color:var(--green)}
+.t-item.error{border-left-color:var(--red)}
+.t-item.info{border-left-color:var(--accent)}
+@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateX(16px)}}
+
+/* ── EMPTY ── */
+.empty{padding:44px;text-align:center;color:var(--muted)}
+.empty-ico{font-size:34px;margin-bottom:10px}
+.empty-txt{font-size:14px;font-weight:700;margin-bottom:4px}
+.empty-s{font-size:12px}
+
+/* ── LOADING ── */
+.loading-r{padding:40px;text-align:center;color:var(--muted);font-size:13px}
+.loading-r::before{content:'';display:block;width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .sidebar{position:fixed;left:-100%;top:0;bottom:0;z-index:100;box-shadow:4px 0 24px rgba(0,0,0,.3)}
+  .sidebar.open{left:0}
+  .menu-toggle{display:flex}
+  .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+  .sb-overlay.open{display:block}
+  .main-wrap{width:100%}
+  .stats-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .page{padding:14px}
+  .topbar{padding:0 14px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .srch input{width:120px}
+  .plan-grid{grid-template-columns:1fr}
+  .tmpl-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ── -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-brand">
+      <div class="l-icon">💬</div>
+      <div class="l-name">SmartChat</div>
+      <div class="l-sub">Admin Control Panel</div>
+    </div>
+    <div class="login-card">
+      <label class="lbl">Email Address</label>
+      <input type="email" id="l-email" placeholder="admin@panel.com" value="admin@panel.com"/>
+      <label class="lbl">Password</label>
+      <input type="password" id="l-pass" placeholder="••••••••" value="admin123" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <button class="btn-login" onclick="doLogin()">Sign in to Dashboard</button>
+      <div id="login-err"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ── -->
+<div id="app">
+  <div class="shell">
+    <div class="sb-overlay" id="sb-overlay" onclick="closeSb()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-head">
+        <div class="sb-icon">💬</div>
+        <div><div class="sb-title">SmartChat</div><div class="sb-ver">Admin Panel v2</div></div>
+      </div>
+
+      <div class="nav-sec">Overview</div>
+      <div class="nav-item active" onclick="nav(this,'dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+
+      <div class="nav-sec">Management</div>
+      <div class="nav-item" onclick="nav(this,'subscribers')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Subscribers
+      </div>
+      <div class="nav-item" onclick="nav(this,'payments')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+        Payments
+      </div>
+
+      <div class="nav-sec">Communication</div>
+      <div class="nav-item" onclick="nav(this,'notifications')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Notifications
+      </div>
+
+      <div class="sb-foot">
+        <div class="adm-info">
+          <div class="adm-av" id="adm-av">A</div>
+          <div style="min-width:0">
+            <div class="adm-name" id="adm-nm">Admin</div>
+            <div class="adm-role">Administrator</div>
+          </div>
+          <button class="btn-logout" onclick="doLogout()" title="Logout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <div class="main-wrap">
+      <div class="topbar">
+        <div class="topbar-l">
+          <button class="menu-toggle" onclick="toggleSb()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div>
+            <div class="pg-title" id="pg-title">Dashboard</div>
+            <div class="pg-sub" id="pg-sub">Overview & statistics</div>
+          </div>
+        </div>
+        <div class="topbar-r">
+          <button class="btn-ref" onclick="refreshAll()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="pages">
+
+        <!-- ═══ DASHBOARD ═══ -->
+        <div class="page active" id="page-dashboard">
+          <div class="stats-row">
+            <div class="stat s-blue"><div class="stat-lbl">Total Subscribers</div><div class="stat-bot"><div class="stat-val" id="s-total">—</div><div class="stat-ico">👥</div></div></div>
+            <div class="stat s-green"><div class="stat-lbl">Active</div><div class="stat-bot"><div class="stat-val" id="s-active">—</div><div class="stat-ico">✅</div></div></div>
+            <div class="stat s-amber"><div class="stat-lbl">Expiring ≤7d</div><div class="stat-bot"><div class="stat-val" id="s-exp7">—</div><div class="stat-ico">⏳</div></div></div>
+            <div class="stat s-red"><div class="stat-lbl">Expired</div><div class="stat-bot"><div class="stat-val" id="s-expired">—</div><div class="stat-ico">❌</div></div></div>
+            <div class="stat s-violet"><div class="stat-lbl">Revenue (PKR)</div><div class="stat-bot"><div class="stat-val" id="p-rev">—</div><div class="stat-ico">💰</div></div></div>
+            <div class="stat s-amber"><div class="stat-lbl">Pending Payments</div><div class="stat-bot"><div class="stat-val" id="p-pend">—</div><div class="stat-ico">🔄</div></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <div class="card-title">Recent Subscribers</div>
+              <span class="card-ct" id="dash-ct"></span>
+            </div>
+            <div class="tbl-wrap" id="dash-tbl"><div class="loading-r"></div></div>
+          </div>
+        </div>
+
+        <!-- ═══ SUBSCRIBERS ═══ -->
+        <div class="page" id="page-subscribers">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+            <div class="srch">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="sub-q" placeholder="Search name or email…" oninput="filterSubs()"/>
+            </div>
+            <span class="card-ct" id="sub-ct"></span>
+          </div>
+          <div class="card">
+            <div class="tbl-wrap" id="sub-tbl"><div class="loading-r"></div></div>
+          </div>
+        </div>
+
+        <!-- ═══ PAYMENTS ═══ -->
+        <div class="page" id="page-payments">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+            <div class="srch">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="pay-q" placeholder="Search subscriber or Txn ID…" oninput="filterPays()"/>
+            </div>
+            <span class="card-ct" id="pay-ct"></span>
+          </div>
+          <div class="card">
+            <div class="tbl-wrap" id="pay-tbl"><div class="loading-r"></div></div>
+          </div>
+        </div>
+
+        <!-- ═══ NOTIFICATIONS ═══ -->
+        <div class="page" id="page-notifications">
+
+          <div class="notif-section">
+            <div class="ns-title">Quick Mail Templates</div>
+            <div class="ns-sub">Select a subscriber, then hit send — emails are pre-built and ready to go</div>
+            <div class="fg" style="max-width:360px;margin-bottom:20px">
+              <label>Target Subscriber</label>
+              <select class="fi" id="quick-sub" onchange="updatePreviews()">
+                <option value="">— choose subscriber —</option>
+              </select>
+            </div>
+            <div class="tmpl-grid" id="tmpl-grid"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="notif-section">
+            <div class="ns-title">Custom Email</div>
+            <div class="ns-sub">Write a fully custom message to any subscriber</div>
+            <div style="max-width:500px">
+              <div class="fg">
+                <label>Subscriber</label>
+                <select class="fi" id="cust-sub"><option value="">— choose —</option></select>
+              </div>
+              <div class="fg">
+                <label>Subject</label>
+                <input type="text" class="fi" id="cust-subj" placeholder="Email subject…"/>
+              </div>
+              <div class="fg">
+                <label>Message</label>
+                <textarea class="fi" id="cust-msg" placeholder="Write your message…"></textarea>
+              </div>
+              <button class="btn btn-primary" id="cust-btn" onclick="sendCustom()" style="width:100%;justify-content:center;padding:11px">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send Email
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div><!-- /pages -->
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Extend ═══ -->
+<div class="overlay" id="m-extend">
+  <div class="modal">
+    <div class="m-head"><div class="m-title">Extend Subscription</div><button class="m-close" onclick="closeM('m-extend')">×</button></div>
+    <div class="m-body">
+      <div class="info-box info-blue" id="ext-info"></div>
+      <div class="fg"><label>Months to Add</label><input type="number" class="fi" id="ext-months" value="1" min="1" max="24"/></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" onclick="closeM('m-extend')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitExtend()">Extend</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Upgrade Plan ═══ -->
+<div class="overlay" id="m-upgrade">
+  <div class="modal">
+    <div class="m-head"><div class="m-title">Change / Upgrade Plan</div><button class="m-close" onclick="closeM('m-upgrade')">×</button></div>
+    <div class="m-body">
+      <div class="info-box info-blue" id="upg-info"></div>
+      <div class="plan-grid" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="plan-card" id="pc-standard" onclick="selPlan('standard')">
+          <div class="plan-name">📦 Standard</div>
+          <div class="plan-price">₨4,499/mo</div>
+          <div class="plan-desc">Basic chatbot access, limited messages</div>
+        </div>
+        <div class="plan-card" id="pc-premium" onclick="selPlan('premium')">
+          <div class="plan-name">🚀 Premium</div>
+          <div class="plan-price">₨5,999/mo</div>
+          <div class="plan-desc">Unlimited messages, priority support</div>
+        </div>
+        <div class="plan-card" id="pc-trial" onclick="selPlan('trial')">
+          <div class="plan-name">🎁 Free Trial</div>
+          <div class="plan-price" style="color:var(--green)">₨0 / 7 days</div>
+          <div class="plan-desc">7-day free trial, manual activation</div>
+        </div>
+      </div>
+      <div class="fg"><label>Custom Amount (PKR)</label><input type="number" class="fi" id="upg-amt" placeholder="e.g. 5999"/></div>
+      <div class="fg"><label>Days to Grant</label><input type="number" class="fi" id="upg-days" value="30" min="1"/></div>
+      <div class="fg"><label>Notes (optional)</label><input type="text" class="fi" id="upg-notes" placeholder="e.g. Upgraded via JazzCash"/></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" onclick="closeM('m-upgrade')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitUpgrade()">Apply Plan Change</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Confirm+Extend Payment ═══ -->
+<div class="overlay" id="m-ce">
+  <div class="modal">
+    <div class="m-head"><div class="m-title">Confirm Payment & Extend</div><button class="m-close" onclick="closeM('m-ce')">×</button></div>
+    <div class="m-body">
+      <div class="info-box info-green">Marks the payment as <strong>completed</strong> and extends the subscriber's plan by <strong>30 days</strong>.</div>
+      <div class="fg"><label>Subscriber ID</label><input type="number" class="fi" id="ce-sub" placeholder="Subscriber ID"/></div>
+    </div>
+    <div class="m-foot">
+      <button class="btn btn-ghost" onclick="closeM('m-ce')">Cancel</button>
+      <button class="btn btn-primary" onclick="submitCE()">Confirm & Extend</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+const API = window.location.origin;
+let TOKEN = localStorage.getItem('sc_admin_token') || '';
+let allSubs = [], allPays = [];
+let extId = null, upgId = null, cePayId = null, selPlanKey = '';
+let planMap = {}; // subscriber_id -> plan name
+let currentPage = 'dashboard';
+
+const PAGE_META = {
+  dashboard:     { title:'Dashboard',      sub:'Overview & key statistics' },
+  subscribers:   { title:'Subscribers',    sub:'Manage subscriber accounts' },
+  payments:      { title:'Payments',       sub:'Track and manage payments' },
+  notifications: { title:'Notifications',  sub:'Send emails to subscribers' },
+};
+
+// ── HELPERS ────────────────────────────────────────────────
+function api(path, opts = {}) {
+  return fetch(API + path, {
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}`, ...opts.headers },
+    ...opts,
+  }).then(async r => {
+    if (r.status === 401) { doLogout(); throw new Error('Session expired'); }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Request failed');
+    return d;
+  });
+}
+
+function toast(msg, type = 'success', dur = 3500) {
+  const el = document.getElementById('toast');
+  const item = document.createElement('div');
+  item.className = `t-item ${type}`;
+  const icons = { success:'✓', error:'✕', info:'ℹ' };
+  item.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  el.appendChild(item);
+  setTimeout(() => {
+    item.style.animation = 'tOut .3s ease forwards';
+    setTimeout(() => item.remove(), 300);
+  }, dur);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '<span style="color:var(--muted)">—</span>';
+  return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+}
+function fmtDatePlain(iso) {
+  if (!iso) return 'N/A';
+  return new Date(iso).toLocaleDateString('en-GB', { day:'2-digit', month:'long', year:'numeric' });
+}
+function daysLeft(iso) {
+  if (!iso) return null;
+  return Math.round((new Date(iso) - Date.now()) / 86400000);
+}
+
+function sBadge(s) {
+  const m = { active:'bg-green', inactive:'bg-gray', expired:'bg-red', suspended:'bg-red', completed:'bg-green', pending:'bg-amber', failed:'bg-red', trial:'bg-blue' };
+  return `<span class="badge ${m[s]||'bg-gray'}">${s}</span>`;
+}
+
+function openM(id) { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+
+function setLoading(btn, on, orig) {
+  if (on) { btn.disabled = true; btn.innerHTML = `<div class="spinner"></div> Sending…`; }
+  else     { btn.disabled = false; btn.innerHTML = orig; }
+}
+
+// ── AUTH ──────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('l-email').value;
+  const pass  = document.getElementById('l-pass').value;
+  document.getElementById('login-err').textContent = '';
+  try {
+    const d = await fetch(`${API}/admin/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password: pass }),
+    }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.detail||'Login failed'); return j; });
+    TOKEN = d.access_token;
+    localStorage.setItem('sc_admin_token', TOKEN);
+    launchApp(email);
+  } catch(e) { document.getElementById('login-err').textContent = e.message; }
+}
+
+function doLogout() {
+  TOKEN = ''; localStorage.removeItem('sc_admin_token');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+async function launchApp(email) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('adm-av').textContent = email.charAt(0).toUpperCase();
+  document.getElementById('adm-nm').textContent = email;
+  buildTemplateGrid();
+  await loadAll();
+}
+
+window.onload = async () => {
+  if (TOKEN) {
+    try { const me = await api('/admin/me'); launchApp(me.email); }
+    catch { TOKEN = ''; localStorage.removeItem('sc_admin_token'); }
+  }
+};
+
+// ── NAV ──────────────────────────────────────────────────
+function nav(el, page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const m = PAGE_META[page];
+  document.getElementById('pg-title').textContent = m.title;
+  document.getElementById('pg-sub').textContent = m.sub;
+  currentPage = page;
+  closeSb();
+}
+function toggleSb() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sb-overlay').classList.toggle('open');
+}
+function closeSb() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sb-overlay').classList.remove('open');
+}
+function refreshAll() {
+  loadAll().then(() => toast('Refreshed', 'info', 2000));
+}
+
+// ── DATA LOAD ────────────────────────────────────────────
+async function loadAll() {
+  try {
+    [allSubs, allPays] = await Promise.all([api('/admin/subscribers'), api('/admin/payments')]);
+    // Build planMap from payments (latest payment per subscriber wins)
+    planMap = {};
+    [...allPays].sort((a,b) => a.id - b.id).forEach(p => {
+      if (p.plan) planMap[p.subscriber_id] = p.plan;
+    });
+
+    // Auto-reset expired payments: set status→pending, amount→0
+    await autoResetExpiredPayments();
+
+    renderDashboard();
+    renderSubTable(allSubs);
+    renderPayTable(allPays);
+    populateDropdowns();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── DASHBOARD ────────────────────────────────────────────
+function renderDashboard() {
+  const active   = allSubs.filter(s => s.status === 'active').length;
+  const expired  = allSubs.filter(s => s.status === 'expired' || (s.plan_ends_at && new Date(s.plan_ends_at) < new Date())).length;
+  const exp7     = allSubs.filter(s => { const d = daysLeft(s.plan_ends_at); return d !== null && d >= 0 && d <= 7; }).length;
+  const revenue  = allPays.filter(p => p.status === 'completed').reduce((a, p) => a + (p.amount||0), 0);
+  const pending  = allPays.filter(p => p.status === 'pending').length;
+  document.getElementById('s-total').textContent   = allSubs.length;
+  document.getElementById('s-active').textContent  = active;
+  document.getElementById('s-exp7').textContent    = exp7;
+  document.getElementById('s-expired').textContent = expired;
+  document.getElementById('p-rev').textContent     = '₨' + Math.round(revenue).toLocaleString();
+  document.getElementById('p-pend').textContent    = pending;
+  const recent = [...allSubs].slice(0, 10);
+  document.getElementById('dash-ct').textContent   = `${recent.length} of ${allSubs.length}`;
+  document.getElementById('dash-tbl').innerHTML    = buildSubHTML(recent, true);
+}
+
+// ── SUBSCRIBERS ──────────────────────────────────────────
+function filterSubs() {
+  const q = document.getElementById('sub-q').value.toLowerCase();
+  renderSubTable(allSubs.filter(s => (s.name||'').toLowerCase().includes(q) || (s.email||'').toLowerCase().includes(q)));
+}
+
+function renderSubTable(subs) {
+  document.getElementById('sub-ct').textContent = `${subs.length} subscriber${subs.length !== 1 ? 's' : ''}`;
+  document.getElementById('sub-tbl').innerHTML = buildSubHTML(subs, false);
+}
+
+function buildSubHTML(subs, mini) {
+  if (!subs.length) return `<div class="empty"><div class="empty-ico">👤</div><div class="empty-txt">No subscribers found</div></div>`;
+  const actCol = mini ? '' : '<th>Actions</th>';
+  let h = `<table><thead><tr><th>Subscriber</th><th>Plan</th><th>Status</th><th>Expires</th>${actCol}</tr></thead><tbody>`;
+  for (const s of subs) {
+    const d = daysLeft(s.plan_ends_at);
+    const expStr = d === null
+      ? fmtDate(s.plan_ends_at)
+      : d < 0  ? `<span style="color:var(--red);font-weight:700">Expired ${Math.abs(d)}d ago</span>`
+      : d === 0 ? `<span style="color:var(--red);font-weight:700">Expires today</span>`
+      : `${fmtDate(s.plan_ends_at)} <span style="font-size:11px;color:${d <= 7 ? 'var(--red)' : d <= 14 ? 'var(--amber)' : 'var(--muted)'}">(${d}d)</span>`;
+
+    const acts = mini ? '' : `<td><div class="acts">
+      <select class="isel" onchange="chgSubStatus(${s.id},this)">
+        <option value="">Status…</option>
+        <option value="active">✅ Active</option>
+        <option value="inactive">⏸ Inactive</option>
+        <option value="expired">❌ Expired</option>
+        <option value="suspended">🚫 Suspended</option>
+      </select>
+      <button class="btn btn-sm btn-g" onclick="openExtend(${s.id},'${esc(s.name)}','${s.plan_ends_at||''}')">+Extend</button>
+      <button class="btn btn-sm btn-v" onclick="openUpgrade(${s.id},'${esc(s.name)}','${s.plan||''}')">⬆ Plan</button>
+    </div></td>`;
+
+    // plan comes directly from the payments table via GET /admin/subscribers (backend resolved)
+    const planName = s.plan || null;
+    const isTrial  = planName && planName.toLowerCase().includes('trial');
+    const planBadge = planName
+      ? `<span class="badge ${planName.toLowerCase().includes('premium') ? 'bg-violet' : isTrial ? 'bg-blue' : 'bg-green'}" style="text-transform:capitalize">${planName}${isTrial ? ' 🎁' : ''}</span>`
+      : `<span style="color:var(--muted);font-size:12px">—</span>`;
+
+    h += `<tr>
+      <td><div class="td-name">${s.name||'—'}</div><div class="td-email">${s.email||'—'}</div>${s.phone?`<div style="font-size:11px;color:var(--muted)">${s.phone}</div>`:''}</td>
+      <td>${planBadge}</td>
+      <td>${sBadge(s.status)}</td>
+      <td style="white-space:nowrap">${expStr}</td>
+      ${acts}
+    </tr>`;
+  }
+  return h + '</tbody></table>';
+}
+
+function esc(str) { return (str||'').replace(/'/g,"\\'"); }
+
+async function chgSubStatus(id, sel) {
+  const status = sel.value; if (!status) return;
+  try {
+    await api(`/admin/subscribers/${id}`, { method:'PATCH', body:JSON.stringify({ status }) });
+    toast(`Status updated → ${status}`);
+    sel.value = '';
+    loadAll();
+  } catch(e) { toast(e.message, 'error'); sel.value = ''; }
+}
+
+function openExtend(id, name, expiry) {
+  extId = id;
+  const d = daysLeft(expiry);
+  document.getElementById('ext-info').innerHTML =
+    `<strong>${name}</strong> · Current expiry: <strong>${fmtDate(expiry)}</strong>
+    ${d !== null ? `· <span style="${d <= 7 ? 'color:var(--red)' : ''}">${d >= 0 ? d+'d left' : 'expired '+Math.abs(d)+'d ago'}</span>` : ''}`;
+  openM('m-extend');
+}
+async function submitExtend() {
+  const months = parseInt(document.getElementById('ext-months').value);
+  try {
+    const r = await api(`/admin/subscribers/${extId}/extend`, { method:'POST', body:JSON.stringify({ months }) });
+    toast(`Extended ✓ New expiry: ${fmtDate(r.new_expiry)}`);
+    closeM('m-extend');
+    loadAll();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openUpgrade(id, name, plan) {
+  upgId = id; selPlanKey = '';
+  // Try to get current plan from latest payment first
+  const subPays = allPays.filter(p => p.subscriber_id === id);
+  const latestPay = subPays.sort((a,b) => b.id - a.id)[0];
+  const currentPlan = latestPay?.plan || plan || '—';
+  document.getElementById('upg-info').innerHTML = `<strong>${name}</strong> · Current plan: <strong>${currentPlan}</strong>`;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('sel'));
+  document.getElementById('upg-amt').value = '';
+  document.getElementById('upg-days').value = '30';
+  document.getElementById('upg-notes').value = '';
+  openM('m-upgrade');
+}
+function selPlan(key) {
+  selPlanKey = key;
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('sel'));
+  document.getElementById('pc-' + key).classList.add('sel');
+  const prices = { standard: 4499, premium: 5999, trial: 0 };
+  document.getElementById('upg-amt').value = prices[key] || '';
+}
+async function submitUpgrade() {
+  if (!selPlanKey) { toast('Select a plan first', 'error'); return; }
+  const days    = parseInt(document.getElementById('upg-days').value) || 30;
+  const amt     = parseFloat(document.getElementById('upg-amt').value) || 0;
+  const notes   = document.getElementById('upg-notes').value.trim();
+  const isTrial = selPlanKey === 'trial';
+  try {
+    // 1. Extend subscription AND pass plan so backend updates it on the payment record
+    const r = await api(`/admin/subscribers/${upgId}/extend`, {
+      method: 'POST',
+      body: JSON.stringify({
+        months: Math.max(1, Math.round(days / 30)),
+        plan: selPlanKey
+      })
+    });
+
+    // 2. Also PATCH the latest payment to update amount + plan + status
+    //    (backend now accepts optional plan & amount on PATCH /admin/payments/{id})
+    const subPays = allPays.filter(p => p.subscriber_id === upgId);
+    const latestPay = subPays.sort((a,b) => b.id - a.id)[0];
+    if (latestPay) {
+      await api(`/admin/payments/${latestPay.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: latestPay.status,
+          plan: selPlanKey,
+          amount: isTrial ? 0 : amt
+        })
+      });
+    }
+
+    // 3. Update planMap immediately so subscriber table shows new plan right away
+    planMap[upgId] = selPlanKey;
+
+    toast(`Plan updated to ${selPlanKey}${isTrial ? ' (7-day Free Trial)' : ''} ✓ Expiry: ${fmtDate(r.new_expiry)}`);
+    closeM('m-upgrade');
+    loadAll();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── PAYMENTS ─────────────────────────────────────────────
+
+// Auto-reset payments whose plan_ends_at has passed: status→pending, amount→0
+async function autoResetExpiredPayments() {
+  const now = new Date();
+  const expired = allPays.filter(p =>
+    p.plan_ends_at &&
+    new Date(p.plan_ends_at) < now &&
+    (p.status === 'completed' || p.amount > 0)
+  );
+  for (const p of expired) {
+    try {
+      await api(`/admin/payments/${p.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'pending', amount: 0, transaction_id: null })
+      });
+      // Update local copy so UI reflects immediately without waiting for reload
+      p.status = 'pending';
+      p.amount = 0;
+      p.transaction_id = null;
+    } catch(_) { /* silent — will retry next refresh */ }
+  }
+}
+
+function filterPays() {
+  const q = document.getElementById('pay-q').value.toLowerCase();
+  renderPayTable(allPays.filter(p =>
+    (p.subscriber_name||'').toLowerCase().includes(q) ||
+    (p.subscriber_email||'').toLowerCase().includes(q) ||
+    (p.transaction_id||'').toLowerCase().includes(q)
+  ));
+}
+
+function renderPayTable(pays) {
+  document.getElementById('pay-ct').textContent = `${pays.length} payment${pays.length !== 1 ? 's' : ''}`;
+  if (!pays.length) {
+    document.getElementById('pay-tbl').innerHTML = `<div class="empty"><div class="empty-ico">💳</div><div class="empty-txt">No payments found</div></div>`;
+    return;
+  }
+  let h = `<table><thead><tr><th>ID</th><th>Subscriber</th><th>Plan</th><th>Amount</th><th>Txn ID</th><th>Method</th><th>Status</th><th>Expiry</th><th>Actions</th></tr></thead><tbody>`;
+  for (const p of pays) {
+    // ── Plan badge ─────────────────────────────────────────────────
+    const isTrialPlan = (p.plan||'').toLowerCase().includes('trial');
+    const payPlanBadge = p.plan
+      ? `<span class="badge ${(p.plan.toLowerCase().includes('premium') ? 'bg-violet' : isTrialPlan ? 'bg-blue' : 'bg-green')}" style="text-transform:capitalize">${p.plan}${isTrialPlan ? ' 🎁' : ''}</span>`
+      : `<span style="color:var(--muted);font-size:12px">—</span>`;
+
+    // ── Expiry + days-left logic ───────────────────────────────────
+    const d = daysLeft(p.plan_ends_at);
+    const isExpired = d !== null && d < 0;
+    let expiryDisplay;
+    if (!p.plan_ends_at) {
+      expiryDisplay = '<span style="color:var(--muted)">—</span>';
+    } else if (isExpired) {
+      expiryDisplay = `<span style="color:var(--red);font-weight:700">Expired ${Math.abs(d)}d ago</span>`;
+    } else if (d === 0) {
+      expiryDisplay = `${fmtDate(p.plan_ends_at)} <span style="color:var(--red);font-weight:700">(Expires today)</span>`;
+    } else {
+      const col = d <= 7 ? 'var(--red)' : d <= 14 ? 'var(--amber)' : 'var(--muted)';
+      expiryDisplay = `${fmtDate(p.plan_ends_at)} <span style="font-size:11px;color:${col}">(${d}d)</span>`;
+    }
+    // 7-day free trial badge next to expiry
+    const isFreeTrial = (p.payment_method === 'manual' && (p.amount === 0 || isTrialPlan));
+    if (isFreeTrial) expiryDisplay += ` <span class="badge bg-blue" style="font-size:10px">7d Trial</span>`;
+
+    // ── Amount display (red + zero if expired) ─────────────────────
+    const amtColor  = isExpired ? 'var(--red)' : 'var(--green)';
+    const amtValue  = isExpired ? 0 : (p.amount || 0);
+    const amtDisplay = `<span style="color:${amtColor};font-weight:700">₨${amtValue.toLocaleString()}</span>${isFreeTrial ? ' <span style="color:var(--muted);font-size:11px">(Free)</span>' : ''}`;
+
+    // ── Row highlight if expired ───────────────────────────────────
+    const rowStyle = isExpired ? ' style="background:#fff8f8"' : '';
+
+    // ── Transaction ID display ────────────────────────────────────
+    const txnDisplay = isExpired
+      ? '<span style="color:var(--muted);font-size:11px">—</span>'
+      : (p.transaction_id
+          ? `<span class="td-mono" style="font-size:11.5px">${p.transaction_id}</span>`
+          : '<span style="color:var(--muted);font-size:11px">—</span>');
+
+    h += `<tr${rowStyle}>
+      <td class="td-mono">#${p.id}</td>
+      <td><div class="td-name">${p.subscriber_name||'—'}</div><div class="td-email">${p.subscriber_email||''}</div></td>
+      <td>${payPlanBadge}</td>
+      <td class="td-mono">${amtDisplay}</td>
+      <td>${txnDisplay}</td>
+      <td>${p.payment_method||'—'}</td>
+      <td>${isExpired ? '<span class="badge bg-red">expired</span>' : sBadge(p.status)}</td>
+      <td style="white-space:nowrap">${expiryDisplay}</td>
+      <td><div class="acts">
+        <select class="isel" onchange="chgPayStatus(${p.id},${p.subscriber_id},'${p.subscriber_email||''}','${esc(p.subscriber_name||'')}',this)">
+          <option value="">Status…</option>
+          <option value="completed">✅ Completed</option>
+          <option value="pending">🔄 Pending</option>
+          <option value="failed">❌ Failed</option>
+        </select>
+        <button class="btn btn-sm btn-g" onclick="openCE(${p.id},${p.subscriber_id})">✓ Confirm+Ext</button>
+      </div></td>
+    </tr>`;
+  }
+  document.getElementById('pay-tbl').innerHTML = h + '</tbody></table>';
+}
+
+async function chgPayStatus(payId, subId, email, name, sel) {
+  const status = sel.value; if (!status) return;
+  try {
+    await api(`/admin/payments/${payId}`, { method:'PATCH', body:JSON.stringify({ status }) });
+    toast(`Payment #${payId} → ${status}`);
+    sel.value = '';
+    // Auto-send status email silently
+    if (email) autoPayMail(payId, email, name, status);
+    loadAll();
+  } catch(e) { toast(e.message, 'error'); sel.value = ''; }
+}
+
+async function autoPayMail(payId, email, name, status) {
+  const msgs = {
+    completed: `Dear ${name},\n\nYour payment has been confirmed and your SmartChat subscription is now active. Thank you!\n\nBest regards,\nSmartChat Team`,
+    pending:   `Dear ${name},\n\nYour payment is under review. We will notify you once confirmed.\n\nBest regards,\nSmartChat Team`,
+    failed:    `Dear ${name},\n\nWe could not process your payment. Please contact support or retry.\n\nBest regards,\nSmartChat Team`,
+  };
+  try {
+    await api('/admin/notifications/payment-email', {
+      method:'POST', body:JSON.stringify({ payment_id: payId, message: msgs[status]||'' })
+    });
+    toast(`📧 Status email sent to ${email}`, 'info');
+  } catch(e) { /* silent */ }
+}
+
+function openCE(payId, subId) {
+  cePayId = payId;
+  document.getElementById('ce-sub').value = subId || '';
+  openM('m-ce');
+}
+async function submitCE() {
+  const subscriber_id = parseInt(document.getElementById('ce-sub').value);
+  if (!subscriber_id) { toast('Enter subscriber ID', 'error'); return; }
+  try {
+    const r = await api(`/admin/payments/${cePayId}/confirm-extend`, { method:'POST', body:JSON.stringify({ subscriber_id }) });
+    toast(`Confirmed ✓ Expiry: ${fmtDate(r.new_expiry)}`);
+    closeM('m-ce');
+    loadAll();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── NOTIFICATIONS ─────────────────────────────────────────
+function populateDropdowns() {
+  const opts = allSubs.map(s => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('');
+  ['quick-sub','cust-sub'].forEach(id => {
+    const el = document.getElementById(id);
+    const cur = el.value;
+    el.innerHTML = '<option value="">— choose subscriber —</option>' + opts;
+    el.value = cur;
+  });
+}
+
+// Templates definition
+const TEMPLATES = [
+  {
+    icon:'⏳', iconBg:'#fffbeb', btnClass:'#d97706',
+    title:'Expiry Reminder',
+    desc:'Remind subscriber their plan is about to expire',
+    subject: s => `SmartChat Subscription Expiring — ${s.name}`,
+    body: s => `Dear ${s.name},\n\nThis is a reminder that your SmartChat subscription expires on ${fmtDatePlain(s.plan_ends_at)}.\n\nPlease renew to keep uninterrupted access to your chatbots.\n\nBest regards,\nSmartChat Team`,
+  },
+  {
+    icon:'🎉', iconBg:'#f0fdf4', btnClass:'#16a34a',
+    title:'Welcome Email',
+    desc:'Send a warm welcome to a new subscriber',
+    subject: s => `Welcome to SmartChat, ${s.name}!`,
+    body: s => `Dear ${s.name},\n\nWelcome to SmartChat! Your account is active and ready to use.\n\nYour subscription is valid until ${fmtDatePlain(s.plan_ends_at)}. Start building your chatbots right away.\n\nBest regards,\nSmartChat Team`,
+  },
+  {
+    icon:'✅', iconBg:'#f0fdf4', btnClass:'#16a34a',
+    title:'Renewal Confirmed',
+    desc:'Confirm successful subscription renewal',
+    subject: s => `Subscription Renewed — SmartChat`,
+    body: s => `Dear ${s.name},\n\nYour SmartChat subscription has been successfully renewed.\n\nYour new expiry date is ${fmtDatePlain(s.plan_ends_at)}. Thank you for staying with SmartChat!\n\nBest regards,\nSmartChat Team`,
+  },
+  {
+    icon:'💳', iconBg:'#eff4ff', btnClass:'#2563eb',
+    title:'Payment Received',
+    desc:'Confirm that payment was received successfully',
+    subject: s => `Payment Received — SmartChat`,
+    body: s => `Dear ${s.name},\n\nWe have received your payment. Your subscription is active until ${fmtDatePlain(s.plan_ends_at)}.\n\nThank you!\n\nBest regards,\nSmartChat Team`,
+  },
+  {
+    icon:'❌', iconBg:'#fff1f1', btnClass:'#dc2626',
+    title:'Subscription Expired',
+    desc:'Inform subscriber their subscription has expired',
+    subject: s => `Your SmartChat Subscription Has Expired`,
+    body: s => `Dear ${s.name},\n\nYour SmartChat subscription expired on ${fmtDatePlain(s.plan_ends_at)}.\n\nContact us to renew and regain access.\n\nBest regards,\nSmartChat Team`,
+  },
+  {
+    icon:'🚀', iconBg:'#f5f3ff', btnClass:'#7c3aed',
+    title:'Plan Upgraded',
+    desc:'Notify subscriber of their plan upgrade',
+    subject: s => `Your SmartChat Plan Has Been Upgraded`,
+    body: s => `Dear ${s.name},\n\nGreat news! Your SmartChat plan has been upgraded. You now have access to all premium features.\n\nYour subscription is valid until ${fmtDatePlain(s.plan_ends_at)}.\n\nBest regards,\nSmartChat Team`,
+  },
+];
+
+function buildTemplateGrid() {
+  document.getElementById('tmpl-grid').innerHTML = TEMPLATES.map((t, i) => `
+    <div class="tmpl-card">
+      <div class="tc-top">
+        <div class="tc-icon" style="background:${t.iconBg}">${t.icon}</div>
+        <div class="tc-title">${t.title}</div>
+      </div>
+      <div class="tc-desc">${t.desc}</div>
+      <div class="tc-preview" id="prev-${i}">Select a subscriber to preview…</div>
+      <button class="send-btn" id="sbtn-${i}" style="background:${t.btnClass}" onclick="sendTemplate(${i},this)">
+        📤 Send ${t.title}
+      </button>
+    </div>
+  `).join('');
+}
+
+function updatePreviews() {
+  const subId = parseInt(document.getElementById('quick-sub').value);
+  const sub = allSubs.find(s => s.id === subId);
+  TEMPLATES.forEach((t, i) => {
+    const prev = document.getElementById('prev-' + i);
+    if (!prev) return;
+    if (sub) {
+      prev.innerHTML = `<strong>To:</strong> ${sub.email}<br><strong>Subject:</strong> ${t.subject(sub)}<br>${t.body(sub).substring(0, 60)}…`;
+    } else {
+      prev.textContent = 'Select a subscriber to preview…';
+    }
+  });
+}
+
+async function sendTemplate(idx, btn) {
+  const subId = parseInt(document.getElementById('quick-sub').value);
+  if (!subId) { toast('Select a subscriber first', 'error'); return; }
+  const sub = allSubs.find(s => s.id === subId);
+  if (!sub) { toast('Subscriber not found', 'error'); return; }
+  const t = TEMPLATES[idx];
+  const orig = btn.innerHTML;
+  setLoading(btn, true);
+  try {
+    await api('/admin/notifications/send', {
+      method:'POST',
+      body: JSON.stringify({ subscriber_id: subId, subject: t.subject(sub), message: t.body(sub) }),
+    });
+    toast(`✉️ "${t.title}" sent to ${sub.email}`);
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(btn, false, orig);
+}
+
+async function sendCustom() {
+  const subId   = parseInt(document.getElementById('cust-sub').value);
+  const subject = document.getElementById('cust-subj').value.trim();
+  const message = document.getElementById('cust-msg').value.trim();
+  if (!subId)   { toast('Select a subscriber', 'error'); return; }
+  if (!subject) { toast('Enter a subject', 'error'); return; }
+  if (!message) { toast('Enter a message', 'error'); return; }
+  const btn = document.getElementById('cust-btn');
+  const orig = btn.innerHTML;
+  setLoading(btn, true);
+  try {
+    await api('/admin/notifications/send', { method:'POST', body:JSON.stringify({ subscriber_id:subId, subject, message }) });
+    const sub = allSubs.find(s => s.id === subId);
+    toast(`✉️ Sent to ${sub?.email||'subscriber'}`);
+    document.getElementById('cust-subj').value = '';
+    document.getElementById('cust-msg').value = '';
+  } catch(e) { toast(e.message, 'error'); }
+  setLoading(btn, false, orig);
+}
+</script>
+</body>
+</html>

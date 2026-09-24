@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FYP Bot</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root {
+  --bg:         #07090f;
+  --surface:    #0e1117;
+  --surface2:   #161b26;
+  --surface3:   #1e2535;
+  --border:     #252e42;
+  --accent:     #6366f1;
+  --accent2:    #8b5cf6;
+  --accent-glow:rgba(99,102,241,0.15);
+  --green:      #22c55e;
+  --red:        #ef4444;
+  --yellow:     #f59e0b;
+  --text:       #e2e8f0;
+  --muted:      #64748b;
+  --muted2:     #94a3b8;
+  --btn-radius: 10px;
+  --grad:       linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+  --font-d: 'Space Grotesk', sans-serif;
+  --font-b: 'Inter', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden;}
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ── Sidebar ── */
+#sidebar{width:300px;min-width:300px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.sidebar-header{padding:20px 18px 16px;border-bottom:1px solid var(--border);background:linear-gradient(160deg,#0f1320,#0e1117);}
+.bot-logo-wrap{display:flex;align-items:center;gap:12px;}
+.bot-icon{width:46px;height:46px;border-radius:12px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;box-shadow:0 0 20px var(--accent-glow);}
+.bot-icon img{width:100%;height:100%;object-fit:cover;}
+.bot-title{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--text);}
+.bot-sub{font-size:10px;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase;margin-top:2px;}
+
+.sidebar-tabs{display:flex;padding:10px 12px 0;gap:4px;}
+.tab-btn{flex:1;padding:7px 4px;background:transparent;border:1px solid transparent;border-radius:8px;color:var(--muted);font-family:var(--font-b);font-size:10.5px;font-weight:500;cursor:pointer;transition:all 0.2s;text-align:center;}
+.tab-btn.active{background:var(--surface2);border-color:var(--accent);color:var(--accent);}
+.tab-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
+
+.tab-content{display:none;flex:1;overflow-y:auto;padding:14px;flex-direction:column;gap:10px;}
+.tab-content.active{display:flex;}
+
+.section-label{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:2px;}
+.quick-btn{width:100%;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font-b);font-size:12px;text-align:left;cursor:pointer;transition:all 0.2s;display:flex;align-items:flex-start;gap:8px;line-height:1.4;}
+.quick-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:14px;padding:26px 16px;text-align:center;cursor:pointer;transition:all 0.25s;position:relative;background:var(--surface2);}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--accent);background:var(--accent-glow);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:30px;margin-bottom:6px;}
+.upload-title{font-family:var(--font-d);font-size:13px;font-weight:600;margin-bottom:3px;}
+.upload-sub{font-size:11px;color:var(--muted);}
+
+.file-pill{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface3);border:1px solid var(--border);border-radius:10px;font-size:12px;}
+.file-pill .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);}
+.file-pill .remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 2px;}
+.file-pill .remove:hover{color:var(--red);}
+
+.check-btn{padding:11px;background:var(--grad);border:none;border-radius:var(--btn-radius);color:#fff;font-family:var(--font-d);font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.check-btn:hover{opacity:0.85;}
+.check-btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+/* Eligibility result */
+.elig-result{border-radius:14px;padding:14px;display:none;flex-direction:column;gap:8px;}
+.elig-result.show{display:flex;}
+.elig-result.eligible{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.28);}
+.elig-result.ineligible{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.28);}
+.elig-result.partial{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.28);}
+.elig-badge{font-family:var(--font-d);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.elig-result.eligible .elig-badge{color:var(--green);}
+.elig-result.ineligible .elig-badge{color:var(--red);}
+.elig-result.partial .elig-badge{color:var(--yellow);}
+.chk-item{display:flex;align-items:flex-start;gap:7px;font-size:11.5px;color:var(--muted2);line-height:1.5;}
+.chk-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.chk-dot.pass{background:var(--green);}
+.chk-dot.fail{background:var(--red);}
+.chk-dot.warn{background:var(--yellow);}
+
+/* FAQ */
+.faq-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.faq-q{padding:10px 14px;font-size:12px;font-weight:500;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:color 0.2s;}
+.faq-q:hover{color:var(--accent);}
+.faq-q .arrow{transition:transform 0.2s;font-size:10px;color:var(--muted);}
+.faq-q.open .arrow{transform:rotate(180deg);}
+.faq-a{padding:0 14px;font-size:11.5px;color:var(--muted2);line-height:1.6;max-height:0;overflow:hidden;transition:max-height 0.3s ease,padding 0.3s;}
+.faq-a.open{max-height:300px;padding:0 14px 12px;}
+
+/* Form */
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-size:11px;color:var(--muted);font-weight:500;}
+.form-input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font-b);font-size:13px;transition:border 0.2s;}
+.form-input:focus{outline:none;border-color:var(--accent);}
+.form-input::placeholder{color:var(--muted);}
+.save-btn{padding:10px;background:var(--grad);border:none;border-radius:var(--btn-radius);color:#fff;font-family:var(--font-d);font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s;margin-top:4px;}
+.save-btn:hover{opacity:0.85;}
+.lead-saved{font-size:12px;color:var(--green);text-align:center;padding:4px;display:none;}
+
+/* ── Chat ── */
+#chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+.chat-topbar{padding:13px 22px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.topbar-avatar{width:36px;height:36px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0;box-shadow:0 0 14px var(--accent-glow);}
+.topbar-avatar img{width:100%;height:100%;object-fit:cover;}
+.topbar-info h2{font-family:var(--font-d);font-size:14px;font-weight:700;}
+.topbar-info p{font-size:10px;color:var(--muted);letter-spacing:0.4px;}
+.status-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;margin-left:auto;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+#messages{flex:1;overflow-y:auto;padding:22px 24px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg-wrap{display:flex;gap:10px;animation:fadeUp 0.25s ease;}
+.msg-wrap.user{flex-direction:row-reverse;}
+.msg-avatar{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:3px;overflow:hidden;}
+.msg-wrap.bot .msg-avatar{background:var(--grad);box-shadow:0 0 10px var(--accent-glow);}
+.msg-wrap.user .msg-avatar{background:var(--surface3);border:1px solid var(--border);}
+.msg-avatar img{width:100%;height:100%;object-fit:cover;border-radius:8px;}
+.bubble{max-width:74%;padding:11px 15px;border-radius:16px;font-size:13.5px;line-height:1.65;position:relative;}
+.msg-wrap.bot .bubble{background:var(--surface2);border:1px solid var(--border);border-top-left-radius:3px;}
+.msg-wrap.user .bubble{background:var(--grad);color:#fff;border-top-right-radius:3px;}
+
+.typing-dots{display:flex;gap:4px;align-items:center;padding:3px 0;}
+.typing-dots span{width:5px;height:5px;background:var(--muted);border-radius:50%;animation:dot 1.4s infinite;}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+/* Welcome */
+.welcome-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;text-align:center;padding:40px 30px;}
+.welcome-glyph{width:72px;height:72px;border-radius:20px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 0 40px var(--accent-glow);}
+.welcome-title{font-family:var(--font-d);font-size:22px;font-weight:700;}
+.welcome-sub{color:var(--muted2);font-size:13px;max-width:340px;line-height:1.65;}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;}
+.chip{padding:7px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:99px;font-size:12.5px;color:var(--text);cursor:pointer;transition:all 0.2s;}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-glow);}
+
+/* Input bar */
+.input-bar{padding:14px 20px;background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:flex-end;gap:8px;}
+.input-wrap{flex:1;position:relative;}
+#user-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 44px 11px 14px;color:var(--text);font-family:var(--font-b);font-size:13.5px;resize:none;outline:none;max-height:110px;transition:border 0.2s;line-height:1.5;}
+#user-input:focus{border-color:var(--accent);}
+#user-input::placeholder{color:var(--muted);}
+#user-input:disabled{opacity:0.45;cursor:not-allowed;}
+.attach-btn{position:absolute;right:10px;bottom:9px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:17px;transition:color 0.2s;padding:2px;}
+.attach-btn:hover{color:var(--accent);}
+#inline-file{display:none;}
+
+.mic-btn,.send-btn{width:42px;height:42px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:17px;transition:all 0.2s;flex-shrink:0;}
+.mic-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);}
+.mic-btn:hover{border-color:var(--accent);color:var(--accent);}
+.mic-btn.recording{background:rgba(239,68,68,.15);border-color:var(--red);color:var(--red);animation:micPulse 1s infinite;}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+.send-btn{background:var(--grad);color:#fff;}
+.send-btn:hover{opacity:.85;transform:scale(1.05);}
+
+/* Attach chip above input */
+.attach-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surface3);border:1px solid var(--accent);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--accent);margin:0 20px 8px;cursor:default;}
+.attach-chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0;margin-left:2px;}
+.attach-chip button:hover{color:var(--red);}
+
+/* Special cards in chat */
+.nocontext-card{margin-top:10px;background:var(--surface3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;}
+.nocontext-chip{padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--text);cursor:pointer;transition:all .2s;text-align:left;display:flex;align-items:center;gap:8px;}
+.nocontext-chip:hover{border-color:var(--accent);color:var(--accent);}
+
+.lead-card{margin-top:10px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.22);border-radius:12px;padding:14px;}
+.lead-row{display:flex;gap:8px;margin-bottom:5px;}
+.lead-label{font-size:11px;color:var(--muted);min-width:60px;}
+.lead-val{font-size:12.5px;color:var(--text);font-weight:500;}
+
+/* Eligibility card in chat */
+.elig-card{margin-top:10px;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:6px;}
+.elig-card.eligible{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.22);}
+.elig-card.ineligible{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.22);}
+.elig-card.partial{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.22);}
+.elig-headline{font-family:var(--font-d);font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:7px;}
+.elig-card.eligible .elig-headline{color:var(--green);}
+.elig-card.ineligible .elig-headline{color:var(--red);}
+.elig-card.partial .elig-headline{color:var(--yellow);}
+.elig-rows{display:flex;flex-direction:column;gap:4px;}
+.elig-row{display:flex;align-items:flex-start;gap:7px;font-size:11.5px;color:var(--muted2);line-height:1.5;}
+.elig-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+
+/* TTS */
+.tts-indicator{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--accent);border-radius:99px;padding:5px 14px;font-size:11px;color:var(--accent);display:none;align-items:center;gap:6px;white-space:nowrap;}
+.tts-indicator.show{display:flex;}
+
+/* Markdown */
+.md-h1{font-family:var(--font-d);font-size:15px;font-weight:700;margin:10px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.md-h2{font-size:13px;font-weight:700;color:var(--accent);margin:8px 0 4px;}
+.md-h3{font-size:12.5px;font-weight:600;margin:6px 0 3px;}
+.md-li{margin-bottom:4px;font-size:13px;}
+.md-bold{font-weight:700;}
+.md-em{color:var(--accent2);font-style:italic;}
+.md-code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:11.5px;font-family:monospace;}
+.md-hr{border:none;border-top:1px solid var(--border);margin:8px 0;}
+
+/* Loading */
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:999;}
+#loading .spin{width:42px;height:42px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading p{color:var(--muted);font-size:13px;}
+
+/* ── Mobile off-canvas sidebar ── */
+.hamburger-btn{display:none;background:none;border:none;color:var(--text);font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;border-radius:8px;flex-shrink:0;}
+.hamburger-btn:hover{background:var(--surface2);}
+.sidebar-close-btn{display:none;background:none;border:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px;border-radius:8px;margin-left:auto;}
+.sidebar-close-btn:hover{color:var(--text);background:var(--surface2);}
+#sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:998;}
+#sidebar-overlay.show{display:block;}
+
+@media(max-width:700px){
+  .hamburger-btn{display:inline-flex;align-items:center;justify-content:center;}
+  .sidebar-close-btn{display:inline-flex;align-items:center;justify-content:center;}
+  #sidebar{
+    position:fixed;top:0;left:0;height:100vh;z-index:999;
+    transform:translateX(-100%);
+    transition:transform 0.28s ease;
+    box-shadow:2px 0 28px rgba(0,0,0,.45);
+  }
+  #sidebar.open{transform:translateX(0);}
+}
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="spin"></div><p>Loading FYP Bot...</p></div>
+
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ── Sidebar ── -->
+<div id="sidebar">
+  <div class="sidebar-header">
+    <div class="bot-logo-wrap">
+      <div class="bot-icon" id="sidebarIcon">🎓</div>
+      <div>
+        <div class="bot-title" id="sidebarName">FYP Bot</div>
+        <div class="bot-sub" id="sidebarSub">Final Year Project Assistant</div>
+      </div>
+      <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Close menu">✕</button>
+    </div>
+  </div>
+
+  <div class="sidebar-tabs">
+    <button class="tab-btn active" onclick="switchTab('quick')">Quick</button>
+    <button class="tab-btn" onclick="switchTab('check')">Check FYP</button>
+    <button class="tab-btn" onclick="switchTab('contact')">Contact</button>
+    <button class="tab-btn" onclick="switchTab('faq')">FAQs</button>
+  </div>
+
+  <!-- Quick questions -->
+  <div id="tab-quick" class="tab-content active">
+    <div id="quick-container"><p style="font-size:12px;color:var(--muted);padding:8px 0">Loading...</p></div>
+  </div>
+
+  <!-- FYP Eligibility checker -->
+  <div id="tab-check" class="tab-content">
+    <div class="section-label">FYP Eligibility Checker</div>
+    <p style="font-size:11.5px;color:var(--muted2);line-height:1.6;margin-bottom:2px">
+      Upload your academic transcript (PDF) to instantly check Capstone Project-I entry criteria.
+    </p>
+
+    <div class="upload-zone" id="upload-zone"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="handleDrop(event)">
+      <input type="file" accept=".pdf" id="transcript-file" onchange="handleFileSelect(this.files[0])"/>
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">Drop transcript here</div>
+      <div class="upload-sub">PDF · Academic Record</div>
+    </div>
+
+    <div id="file-preview" style="display:none">
+      <div class="file-pill">
+        <span>📄</span>
+        <span class="name" id="file-name-label">transcript.pdf</span>
+        <button class="remove" onclick="clearFile()">✕</button>
+      </div>
+    </div>
+
+    <button class="check-btn" id="check-btn" onclick="checkEligibility()" disabled>
+      🔍 Check Eligibility
+    </button>
+
+    <div class="elig-result" id="sidebar-elig">
+      <div class="elig-badge" id="sidebar-badge"></div>
+      <div id="sidebar-details"></div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div id="tab-contact" class="tab-content">
+    <div class="section-label">Get in Touch</div>
+    <p style="font-size:11.5px;color:var(--muted2);line-height:1.55;margin-bottom:2px">
+      Submit your details and we'll reach out.
+    </p>
+    <div class="form-group"><label>Full Name</label><input class="form-input" id="lead-name" placeholder="Your name"/></div>
+    <div class="form-group"><label>Phone Number</label><input class="form-input" id="lead-phone" placeholder="+92 300 0000000"/></div>
+    <div class="form-group"><label>Email (optional)</label><input class="form-input" type="email" id="lead-email" placeholder="you@example.com"/></div>
+    <div class="form-group"><label>Your Query</label><textarea class="form-input" id="lead-request" placeholder="What do you need help with?" rows="3" style="resize:none"></textarea></div>
+    <button class="save-btn" onclick="submitLead()">📨 Submit</button>
+    <div class="lead-saved" id="lead-saved">✅ Submitted! We'll be in touch soon.</div>
+  </div>
+
+  <!-- FAQs -->
+  <div id="tab-faq" class="tab-content">
+    <div class="section-label">Frequently Asked Questions</div>
+    <div id="faq-container"><p style="font-size:12px;color:var(--muted)">Loading FAQs...</p></div>
+  </div>
+</div>
+
+<!-- ── Chat area ── -->
+<div id="chat-area">
+  <div class="chat-topbar">
+    <button class="hamburger-btn" onclick="openSidebar()" aria-label="Open menu">☰</button>
+    <div class="topbar-avatar" id="topbarAvatar">🎓</div>
+    <div class="topbar-info">
+      <h2 id="topbarName">FYP Bot</h2>
+      <p id="topbarSub">Final Year Project .</p>
+    </div>
+    <div class="status-dot"></div>
+  </div>
+
+  <div id="messages">
+    <div class="welcome-screen" id="welcome-screen">
+      <div class="welcome-glyph" id="welcomeIcon">🎓</div>
+      <div class="welcome-title" id="welcomeTitle">FYP Bot</div>
+      <div class="welcome-sub" id="welcomeSub">Ask about Capstone eligibility, group rules, deadlines — or upload your transcript for an instant check.</div>
+      <div class="chips" id="welcome-chips"></div>
+    </div>
+  </div>
+
+  <!-- Inline attach preview (above input) -->
+  <div id="inline-preview" style="display:none">
+    <div class="attach-chip">
+      📄 <span id="inline-name">transcript.pdf</span>
+      <button onclick="clearInlineFile()">✕</button>
+    </div>
+  </div>
+
+  <div class="tts-indicator" id="tts-indicator">🔊 Speaking...</div>
+  <button id="stop-tts-btn" onclick="stopTTS()" title="Stop speaking" style="display:none;position:absolute;bottom:80px;left:50%;transform:translateX(-50%) translateX(90px);background:var(--surface2);border:1px solid var(--red);border-radius:99px;padding:5px 14px;font-size:11px;color:var(--red);cursor:pointer;align-items:center;gap:6px;white-space:nowrap;z-index:10;">⏹ Stop</button>
+
+  <div class="input-bar">
+    <button class="mic-btn" id="mic-btn" onclick="toggleMic()" title="Voice input">🎤</button>
+    <div class="input-wrap">
+      <textarea id="user-input" placeholder="Ask anything about FYP, or 📎 attach your transcript..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
+      <button class="attach-btn" onclick="document.getElementById('inline-file').click()" title="Attach transcript PDF">📎</button>
+      <input type="file" id="inline-file" accept=".pdf" onchange="handleInlineFile(this.files[0])"/>
+    </div>
+    <button class="send-btn" onclick="sendMsg()">➤</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+if(typeof pdfjsLib!=='undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc=
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const API='';
+let SESSION_ID=crypto.randomUUID();
+let botConfig=null;
+let recognition=null;
+let pendingPdfText=null; // extracted text from inline-attached PDF
+
+// ── Resolve bot_id from URL ─────────────────────────────────────
+// Supports the dashboard's embed/preview path style (.../123) as
+// well as ?bot_id=123 or ?chatbot_id=123 query params.
+function _getBotIdFromUrl(){
+  const path=window.location.pathname.replace(/^\/+|\/+$/g,'');
+  if(/^\d+$/.test(path)) return path;
+  const params=new URLSearchParams(window.location.search);
+  return params.get('bot_id')||params.get('chatbot_id')||'';
+}
+const BOT_ID=_getBotIdFromUrl();
+
+// ── Init ──────────────────────────────────────────────────────
+async function init(){
+  try{
+    const qs=BOT_ID?`?bot_id=${encodeURIComponent(BOT_ID)}`:'';
+    const res=await fetch(`${API}/bot-config${qs}`);
+    botConfig=await res.json();
+    applyConfig(botConfig);
+    setTimeout(()=>applyConfig(botConfig),60);
+    loadFaqs(botConfig.faqs);
+    buildQuickQuestions(botConfig);
+    document.getElementById('loading').style.display='none';
+  }catch(e){
+    document.getElementById('loading').innerHTML=
+      `<p style="color:var(--red)">⚠️ Could not connect to server: ${e.message}</p>`;
+  }
+}
+
+// ── Apply DB config ───────────────────────────────────────────
+function applyConfig(cfg){
+  const theme=cfg.theme_color||'#6366f1',btn=cfg.btn_color||theme,
+        bg=cfg.background_color||'#07090f',txt=cfg.text_color||'#e2e8f0';
+  const shapeMap={pill:'99px',rounded:'10px',square:'4px'};
+  const br=shapeMap[cfg.button_shape]||'10px';
+  const ht=_isLight(theme)?'#111':'#fff', hm=_isLight(theme)?'rgba(0,0,0,0.5)':'rgba(255,255,255,0.65)';
+  const bl=_isLight(bg);
+  const s=bl?adjustColor(bg,-8):adjustColor(bg,10),
+        s2=bl?adjustColor(bg,-18):adjustColor(bg,20),
+        bo=bl?adjustColor(bg,-35):adjustColor(bg,38),
+        mu=bl?adjustColor(txt,60):adjustColor(txt,-80);
+  let st=document.getElementById('sc-dyn');
+  if(!st){st=document.createElement('style');st.id='sc-dyn';document.head.appendChild(st);}
+  st.textContent=[
+    `:root{--accent:${theme};--accent2:${btn};--bg:${bg};--surface:${s};--surface2:${s2};--border:${bo};--text:${txt};--muted:${mu};--btn-radius:${br};--grad:linear-gradient(135deg,${theme},${btn});--accent-glow:${theme}2e;}`,
+    `body{font-family:'${cfg.font_family||'Inter'}',sans-serif!important;font-size:${cfg.font_size||14}px!important;background:${bg}!important;color:${txt}!important}`,
+    `#sidebar{background:${s}!important;border-color:${bo}!important}`,
+    `#chat-area,#messages{background:${bg}!important}`,
+    `.sidebar-header,.chat-topbar{background:${theme}!important;border-color:${bo}!important}`,
+    `.bot-title,.topbar-info h2{color:${ht}!important}`,
+    `.bot-sub,.topbar-info p{color:${hm}!important}`,
+    `.input-bar{background:${s}!important;border-color:${bo}!important}`,
+    `.tab-btn.active{background:${s2}!important;border-color:${theme}!important;color:${theme}!important}`,
+    `.msg-wrap.bot .bubble{background:${s2}!important;border-color:${bo}!important;color:${txt}!important}`,
+    `.msg-wrap.user .bubble{background:linear-gradient(135deg,${theme},${btn})!important;color:#fff!important}`,
+    `.welcome-screen{background:${bg}!important}.welcome-title{color:${txt}!important}`,
+    `.chip{background:${s2}!important;border-color:${bo}!important;color:${txt}!important}`,
+    `#user-input{background:${s2}!important;border-color:${bo}!important;color:${txt}!important}`,
+    `.send-btn,.check-btn,.save-btn{background:linear-gradient(135deg,${theme},${btn})!important;border-radius:${br}!important}`,
+    `.quick-btn,.faq-item,.form-input,.upload-zone,.file-pill{background:${s2}!important;border-color:${bo}!important;color:${txt}!important}`,
+    `.mic-btn{background:${s2}!important;border-color:${bo}!important;color:${mu}!important}`,
+  ].join('\n');
+  const name=cfg.name||'FYP Bot';
+  document.getElementById('sidebarName').textContent=name;
+  document.getElementById('topbarName').textContent=name;
+  document.getElementById('welcomeTitle').textContent=name;
+  document.getElementById('welcomeSub').textContent=cfg.welcome_msg||'Ask about Capstone eligibility, group rules, deadlines — or upload your transcript for an instant check.';
+  document.getElementById('topbarSub').textContent=(cfg.org_name||'')+' · Powered by SmartChat';
+  document.title=name;
+  if(cfg.logo_url){
+    const mk=(a)=>`<img src="${cfg.logo_url}" alt="${esc(a)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit"/>`;
+    document.getElementById('sidebarIcon').innerHTML=mk(name);
+    document.getElementById('topbarAvatar').innerHTML=mk(name);
+    const wi=document.getElementById('welcomeIcon');
+    wi.innerHTML=`<img src="${cfg.logo_url}" alt="${esc(name)}" style="width:72px;height:72px;object-fit:cover;border-radius:20px"/>`;
+    wi.style.cssText='font-size:0;display:flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:20px;background:none;box-shadow:none';
+  }
+}
+function _isLight(h){const n=parseInt((h||'#000').replace('#','').padEnd(6,'0'),16);return(0.299*((n>>16)&255)+0.587*((n>>8)&255)+0.114*(n&255))>155;}
+function adjustColor(h,a){const n=parseInt(h.replace('#',''),16);return'#'+[Math.min(255,((n>>16)&255)+a),Math.min(255,((n>>8)&255)+a),Math.min(255,(n&255)+a)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+
+// ── Quick questions & FAQs ────────────────────────────────────
+function buildQuickQuestions(cfg){
+  const faqs=cfg.faqs||[],c=document.getElementById('quick-container');
+  c.innerHTML='';
+  if(!faqs.length){c.innerHTML='<p style="font-size:12px;color:var(--muted)">No questions configured.</p>';return;}
+  const g={};
+  faqs.forEach(f=>{const cat=f.category||'General';if(!g[cat])g[cat]=[];g[cat].push(f);});
+  Object.entries(g).forEach(([cat,items])=>{
+    const sec=document.createElement('div');
+    sec.innerHTML=`<div class="section-label">${esc(cat)}</div>`;
+    const w=document.createElement('div');w.style.cssText='display:flex;flex-direction:column;gap:6px;margin-bottom:10px';
+    items.forEach(f=>{const b=document.createElement('button');b.className='quick-btn';b.innerHTML=`<span>💬</span>${esc(f.question)}`;b.onclick=()=>sendQuick(f.question);w.appendChild(b);});
+    sec.appendChild(w);c.appendChild(sec);
+  });
+  const chips=document.getElementById('welcome-chips');chips.innerHTML='';
+  faqs.slice(0,4).forEach(f=>{const b=document.createElement('button');b.className='chip';b.textContent=f.question;b.onclick=()=>sendQuick(f.question);chips.appendChild(b);});
+}
+function loadFaqs(faqs){
+  const c=document.getElementById('faq-container');
+  if(!faqs||!faqs.length){c.innerHTML='<p style="font-size:12px;color:var(--muted)">No FAQs configured.</p>';return;}
+  c.innerHTML='';
+  faqs.forEach((f,i)=>{
+    const d=document.createElement('div');d.className='faq-item';
+    d.innerHTML=`<div class="faq-q" onclick="toggleFaq(${i})" id="fq${i}"><span>${esc(f.question)}</span><span class="arrow">▼</span></div><div class="faq-a" id="fa${i}">${esc(f.answer)}</div>`;
+    c.appendChild(d);
+  });
+}
+function toggleFaq(i){document.getElementById('fq'+i).classList.toggle('open');document.getElementById('fa'+i).classList.toggle('open');}
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  const tabs=['quick','check','contact','faq'],idx=tabs.indexOf(id);
+  document.querySelectorAll('.tab-btn')[idx]?.classList.add('active');
+  document.getElementById('tab-'+id)?.classList.add('active');
+}
+
+// ── Mobile sidebar toggle ──────────────────────────────────────
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+// ── PDF text extraction ───────────────────────────────────────
+async function extractPdfText(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();
+    r.onload=async(e)=>{
+      try{
+        const pdf=await pdfjsLib.getDocument({data:e.target.result}).promise;
+        let text='';
+        for(let p=1;p<=pdf.numPages;p++){
+          const page=await pdf.getPage(p),content=await page.getTextContent();
+          text+=content.items.map(i=>i.str).join(' ')+'\n';
+        }
+        resolve(text.trim());
+      }catch(err){reject(err);}
+    };
+    r.onerror=reject;r.readAsArrayBuffer(file);
+  });
+}
+
+// ── Sidebar eligibility checker ───────────────────────────────
+let sidebarFile=null;
+function handleFileSelect(file){
+  if(!file)return;sidebarFile=file;
+  document.getElementById('file-name-label').textContent=file.name;
+  document.getElementById('file-preview').style.display='block';
+  document.getElementById('upload-zone').style.display='none';
+  document.getElementById('check-btn').disabled=false;
+  document.getElementById('sidebar-elig').className='elig-result';
+}
+function handleDrop(e){
+  e.preventDefault();document.getElementById('upload-zone').classList.remove('drag');
+  const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')handleFileSelect(f);
+}
+function clearFile(){
+  sidebarFile=null;
+  document.getElementById('file-preview').style.display='none';
+  document.getElementById('upload-zone').style.display='block';
+  document.getElementById('check-btn').disabled=true;
+  document.getElementById('transcript-file').value='';
+  document.getElementById('sidebar-elig').className='elig-result';
+}
+
+async function checkEligibility(){
+  if(!sidebarFile)return;
+  const btn=document.getElementById('check-btn');
+  btn.disabled=true;btn.innerHTML='⏳ Analysing...';
+  try{
+    const text=await extractPdfText(sidebarFile);
+    const result=analyseLocal(text);
+    renderSidebarResult(result);
+
+    // Show transcript table in chat first (as raw HTML bubble)
+    const tableHtml=buildTranscriptTable(result.rows);
+    if(tableHtml){
+      const w=document.getElementById('welcome-screen');if(w)w.remove();
+      const wrap=document.createElement('div');wrap.className='msg-wrap bot';
+      const av=document.createElement('div');av.className='msg-avatar';
+      av.innerHTML=botConfig?.logo_url?`<img src="${botConfig.logo_url}" alt="bot"/>`:'🎓';
+      const bub=document.createElement('div');bub.className='bubble';
+      bub.style.cssText='max-width:90%;padding:12px 14px;';
+      bub.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">📋 Transcript — ${sidebarFile.name}</div>
+        <div style="font-size:11.5px;color:var(--muted2);margin-bottom:6px">
+          ✅ <strong style="color:var(--green)">${result.earned}</strong> passed credit hours 
+          &nbsp;|&nbsp; ❌ <strong style="color:var(--red)">${result.failedCourses.length}</strong> failed/incomplete courses excluded
+          &nbsp;|&nbsp; 📊 CGPA: <strong>${result.cgpa!==null?result.cgpa.toFixed(2):'N/A'}</strong>
+        </div>
+        ${tableHtml}`;
+      wrap.appendChild(av);wrap.appendChild(bub);
+      document.getElementById('messages').appendChild(wrap);
+      const m=document.getElementById('messages');m.scrollTop=m.scrollHeight;
+    }
+
+    // Fire AI directly — never expose raw prompt in input/chat bubble
+    const summary=`Passed credit hours (excluding F/incomplete): ${result.earned}\nCGPA: ${result.cgpa||'unknown'}\nFailed courses: ${result.failedCourses.map(r=>`${r.code} (${r.grade})`).join(', ')||'none detected'}`;
+    const fullPrompt=`Please analyse my academic transcript for Capstone Project-I (CS-462) eligibility. Give a full detailed breakdown.\n\nPre-parsed summary:\n${summary}\n\nFull transcript text:\n${text.slice(0,4000)}`;
+
+    // Show a clean user bubble — no raw text
+    addMsg('user','📄 Check my Capstone Project-I eligibility');
+    addTyping();
+    try{
+      const res=await fetch(`${API}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:SESSION_ID,message:fullPrompt,bot_id:BOT_ID||undefined})});
+      const status=rl.includes('not eligible')||rl.includes('ineligible')?'ineligible'
+                  :rl.includes('committee')||rl.includes('conditionally')||rl.includes('may be allowed')?'partial'
+                  :rl.includes('eligible')?'eligible':null;
+      if(status){
+        const card=document.createElement('div');card.className=`elig-card ${status}`;
+        const ic={eligible:'✅',ineligible:'❌',partial:'⚠️'};
+        const lb={eligible:'Eligible for Capstone I',ineligible:'Not Currently Eligible',partial:'Conditional — Committee Review Required'};
+        card.innerHTML=`<div class="elig-headline">${ic[status]} ${lb[status]}</div><div style="font-size:11.5px;color:var(--muted2);margin-top:2px">See full analysis above.</div>`;
+        bubble.appendChild(card);
+      }
+      playTTS(data.reply);
+    }catch(e){removeTyping();addMsg('bot','Sorry, something went wrong. Please try again.');}
+  }catch(err){alert('Could not read PDF: '+err.message);}
+  finally{btn.disabled=false;btn.innerHTML='🔍 Check Eligibility';}
+}
+
+// ── Parse transcript rows from PDF text ──────────────────────
+// Returns array of {code, title, credits, grade, points, semester}
+function parseTranscriptRows(text){
+  const rows=[];
+  // Detect semester headers
+  const semesterPattern=/(Fall|Spring)\s+\((\d{4})\)/gi;
+  const semMatches=[...text.matchAll(semesterPattern)];
+  // Split text by semester sections
+  const parts=[];
+  let lastIdx=0,lastLabel='';
+  semMatches.forEach((m,i)=>{
+    if(lastLabel)parts.push({label:lastLabel,chunk:text.slice(lastIdx,m.index)});
+    lastLabel=`${m[1]} ${m[2]}`;lastIdx=m.index;
+  });
+  if(lastLabel)parts.push({label:lastLabel,chunk:text.slice(lastIdx)});
+
+  // Inside each semester chunk, extract course rows
+  // Pattern: Sr# CourseCode CourseTitle Credits Grade Points
+  // In raw PDF text these fields come out as whitespace-separated tokens
+  const gradeSet=new Set(['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-','F']);
+  parts.forEach(({label,chunk})=>{
+    // Match patterns like: 1 CS-120 Intro... 1 B- 2.7
+    // We look for: digit(s) whitespace code whitespace ... credits grade points
+    const lineRe=/(\d+)\s+((?:CS|SE|ENG|MATH|PHY|SS|DS|BIO)[\s-]?\d+[A-Z-]*)\s+(.+?)\s+(\d+)\s+(A\+|A-?|B\+|B-?|C\+|C-?|D\+|D-?|F)\s+([\d.]+)/g;
+    let m;
+    while((m=lineRe.exec(chunk))!==null){
+      rows.push({
+        semester:label,
+        sr:m[1],
+        code:m[2].trim(),
+        title:m[3].trim(),
+        credits:parseInt(m[4]),
+        grade:m[5].trim(),
+        points:parseFloat(m[6])
+      });
+    }
+  });
+  return rows;
+}
+
+// Passing grades — anything that is NOT F and NOT blank/0
+const PASSING_GRADES=new Set(['A+','A','A-','B+','B','B-','C+','C','C-','D+','D','D-']);
+
+// ── Local quick eligibility analysis ─────────────────────────
+function analyseLocal(text){
+  const cgpaM=text.match(/cumulative grade point average[:\s]+([0-9.]+)/i)||text.match(/cgpa[:\s]+([0-9.]+)/i);
+  const cgpa=cgpaM?parseFloat(cgpaM[1]):null;
+
+  // Parse structured rows
+  const rows=parseTranscriptRows(text);
+
+  // Count credit hours ONLY from passed courses
+  let earned=0;
+  const failedCourses=[];
+  const passedCourses=[];
+  rows.forEach(r=>{
+    if(PASSING_GRADES.has(r.grade)){
+      earned+=r.credits;
+      passedCourses.push(r);
+    } else {
+      failedCourses.push(r);
+    }
+  });
+
+  // Fallback heuristic if structured parse yields 0
+  if(earned===0){
+    const fallbackRows=[...text.matchAll(/(\d+)\s+([A-D][+-]?|F)\s+([\d.]+)/g)];
+    fallbackRows.forEach(m=>{
+      const g=m[2];if(PASSING_GRADES.has(g))earned+=parseInt(m[1]);
+    });
+  }
+
+  // Prerequisites
+  // Database Systems: CS-243 passed
+  const dbRow=passedCourses.find(r=>/cs[\s-]?243/i.test(r.code)||/database\s*systems?/i.test(r.title));
+  // OOAD: CS-366 passed
+  const ooadRow=passedCourses.find(r=>/cs[\s-]?366/i.test(r.code)||/object[\s-]*oriented[\s-]*analysis/i.test(r.title));
+  // Software Engineering: SE-304 passed
+  const seRow=passedCourses.find(r=>/se[\s-]?304/i.test(r.code)||(/software\s*engineering/i.test(r.title)&&!/quality|requirement/i.test(r.title)));
+  // OOP: CS-239
+  const oopRow=passedCourses.find(r=>/cs[\s-]?239/i.test(r.code)||/object\s*oriented\s*programming/i.test(r.title));
+
+  const hasDB=!!dbRow;
+  const hasOOAD=!!ooadRow;
+  const hasSE=!!seRow;
+
+  const checks=[];let eligible=true;
+
+  // ── CGPA check ──
+  if(cgpa!==null){
+    if(cgpa<2.0){checks.push({s:'fail',t:`CGPA ${cgpa.toFixed(2)} — below 2.0 minimum. Not eligible.`});eligible=false;}
+    else if(cgpa>=3.3){checks.push({s:'pass',t:`CGPA ${cgpa.toFixed(2)} — excellent! Qualifies for up to 2 CH shortfall exemption.`});}
+    else if(cgpa>=3.0){checks.push({s:'warn',t:`CGPA ${cgpa.toFixed(2)} — qualifies for up to 1 CH shortfall (needs committee approval).`});}
+    else{checks.push({s:'warn',t:`CGPA ${cgpa.toFixed(2)} — meets minimum (≥2.0) but no credit shortfall exemptions apply.`});}
+  }else{checks.push({s:'warn',t:'CGPA not detected — AI analysis below will verify.'});}
+
+  // ── Credit hours check (only passed courses) ──
+  if(earned>0){
+    const short=90-earned;
+    if(short<=0){
+      checks.push({s:'pass',t:`${earned} passed credit hours — meets the 90 CH requirement ✓`});
+    } else if(short===1&&cgpa>=3.0){
+      checks.push({s:'warn',t:`${earned} passed CH (1 short of 90) — conditional with committee approval (CGPA ≥ 3.0 ✓)`});
+    } else if(short<=2&&cgpa>=3.3){
+      checks.push({s:'warn',t:`${earned} passed CH (${short} short of 90) — conditional with committee approval (CGPA ≥ 3.3 ✓)`});
+    } else {
+      checks.push({s:'fail',t:`${earned} passed credit hours — ${short} CH below the 90 CH requirement. Not eligible.`});
+      eligible=false;
+    }
+    if(failedCourses.length>0){
+      checks.push({s:'warn',t:`${failedCourses.length} course(s) excluded (F grade or incomplete): ${failedCourses.map(r=>r.code||'?').join(', ')}`});
+    }
+  }else{
+    checks.push({s:'warn',t:'Credit hours not parsed from this PDF — AI analysis below will check.'});
+  }
+
+  // ── Prerequisite: Database Systems ──
+  if(hasDB){checks.push({s:'pass',t:`Database Systems (CS-243) — passed ✓ (Grade: ${dbRow.grade})`});}
+  else{
+    // Check if attempted but failed
+    const dbFailed=failedCourses.find(r=>/cs[\s-]?243/i.test(r.code)||/database\s*systems?/i.test(r.title));
+    if(dbFailed){checks.push({s:'fail',t:`Database Systems (CS-243) — attempted but FAILED (Grade: ${dbFailed.grade}). Must pass before Capstone.`});}
+    else{checks.push({s:'fail',t:'Database Systems (CS-243) — not found in transcript. Required prerequisite.'});}
+    eligible=false;
+  }
+
+  // ── Prerequisite: OOAD or SE ──
+  if(hasOOAD){checks.push({s:'pass',t:`OOAD (CS-366) — passed ✓ (Grade: ${ooadRow.grade})`});}
+  else if(hasSE){checks.push({s:'pass',t:`Software Engineering (SE-304) — passed ✓ (Grade: ${seRow.grade}) — satisfies OOAD-category prereq`});}
+  else{
+    const ooadFailed=failedCourses.find(r=>/cs[\s-]?366/i.test(r.code));
+    const seFailed=failedCourses.find(r=>/se[\s-]?304/i.test(r.code));
+    if(ooadFailed||seFailed){checks.push({s:'fail',t:`OOAD/SE prerequisite attempted but not passed. Must pass CS-366 or SE-304.`});}
+    else{checks.push({s:'fail',t:'Neither OOAD (CS-366) nor Software Engineering (SE-304) passed. One is required.'});}
+    eligible=false;
+  }
+
+  const hasWarn=checks.some(c=>c.s==='warn');
+  const status=!eligible?'ineligible':hasWarn?'partial':'eligible';
+  return{cgpa,earned,checks,status,rows,passedCourses,failedCourses};
+}
+
+// ── Render transcript as HTML table in chat ───────────────────
+function buildTranscriptTable(rows){
+  if(!rows||!rows.length)return'';
+  // Group by semester
+  const bySem={};
+  rows.forEach(r=>{
+    if(!bySem[r.semester])bySem[r.semester]=[];
+    bySem[r.semester].push(r);
+  });
+  const gradeColor=g=>{
+    if(!g||g==='0')return'var(--muted)';
+    if(g==='F')return'var(--red)';
+    if(g.startsWith('A'))return'var(--green)';
+    if(g.startsWith('B'))return'#60a5fa';
+    if(g.startsWith('C'))return'var(--yellow)';
+    return'#f97316';
+  };
+  let html=`<div style="overflow-x:auto;margin-top:10px;border-radius:10px;border:1px solid var(--border)">
+<table style="width:100%;border-collapse:collapse;font-size:12px;">
+<thead><tr style="background:var(--surface3)">
+<th style="padding:7px 10px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Code</th>
+<th style="padding:7px 10px;text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Course</th>
+<th style="padding:7px 10px;text-align:center;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">CH</th>
+<th style="padding:7px 10px;text-align:center;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">Grade</th>
+</tr></thead><tbody>`;
+  Object.entries(bySem).forEach(([sem,courses])=>{
+    html+=`<tr><td colspan="4" style="padding:5px 10px;background:var(--surface3);color:var(--accent);font-size:11px;font-weight:700;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">${sem}</td></tr>`;
+    courses.forEach((r,i)=>{
+      const bg=i%2===0?'var(--surface2)':'var(--surface)';
+      const isPassed=PASSING_GRADES.has(r.grade);
+      html+=`<tr style="background:${bg}">
+<td style="padding:6px 10px;font-family:monospace;font-size:11px;color:var(--muted2)">${r.code}</td>
+<td style="padding:6px 10px;color:var(--text)">${r.title}</td>
+<td style="padding:6px 10px;text-align:center;color:var(--muted2)">${r.credits}</td>
+<td style="padding:6px 10px;text-align:center;font-weight:700;color:${gradeColor(r.grade)}">${r.grade}${!isPassed&&r.grade?'&nbsp;✗':''}</td>
+</tr>`;
+    });
+  });
+  html+=`</tbody></table></div>`;
+  return html;
+}
+
+function renderSidebarResult(r){
+  const el=document.getElementById('sidebar-elig'),badge=document.getElementById('sidebar-badge'),det=document.getElementById('sidebar-details');
+  el.className='elig-result show '+r.status;
+  const icons={eligible:'✅',ineligible:'❌',partial:'⚠️'};
+  const labels={eligible:'Eligible for Capstone I',ineligible:'Not Eligible',partial:'Conditional — Review Needed'};
+  badge.className='elig-badge';badge.innerHTML=`${icons[r.status]} ${labels[r.status]}`;
+  det.innerHTML=r.checks.map(c=>`<div class="chk-item"><div class="chk-dot ${c.s==='pass'?'pass':c.s==='warn'?'warn':'fail'}"></div><span>${c.t}</span></div>`).join('');
+}
+
+// ── Inline attach (📎 in input bar) ──────────────────────────
+let inlineFile=null;
+let inlineAnalysisResult=null;
+async function handleInlineFile(file){
+  if(!file)return;inlineFile=file;
+  document.getElementById('inline-name').textContent=file.name;
+  document.getElementById('inline-preview').style.display='flex';
+  try{
+    pendingPdfText=await extractPdfText(file);
+    inlineAnalysisResult=analyseLocal(pendingPdfText);
+  }
+  catch(e){pendingPdfText=null;inlineAnalysisResult=null;alert('Could not read PDF: '+e.message);}
+}
+function clearInlineFile(){
+  inlineFile=null;pendingPdfText=null;
+  document.getElementById('inline-preview').style.display='none';
+  document.getElementById('inline-file').value='';
+}
+
+// ── Chat helpers ──────────────────────────────────────────────
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderMd(t){
+  let h=esc(t);
+  h=h.replace(/^### (.+)$/gm,'<div class="md-h3">$1</div>');
+  h=h.replace(/^## (.+)$/gm,'<div class="md-h2">$1</div>');
+  h=h.replace(/^# (.+)$/gm,'<div class="md-h1">$1</div>');
+  h=h.replace(/\*\*(.+?)\*\*/g,'<span class="md-bold">$1</span>');
+  h=h.replace(/\*(.+?)\*/g,'<em class="md-em">$1</em>');
+  h=h.replace(/`(.+?)`/g,'<code class="md-code">$1</code>');
+  h=h.replace(/^---$/gm,'<hr class="md-hr"/>');
+  h=h.replace(/^[-•▸✓✗] (.+)$/gm,'<div class="md-li">• $1</div>');
+  h=h.replace(/\n/g,'<br/>');
+  return `<div class="md-content">${h}</div>`;
+}
+function scrollDown(){const m=document.getElementById('messages');m.scrollTop=m.scrollHeight;}
+function addMsg(role,html,raw=false){
+  const w=document.getElementById('welcome-screen');if(w)w.remove();
+  const wrap=document.createElement('div');wrap.className=`msg-wrap ${role}`;
+  const av=document.createElement('div');av.className='msg-avatar';
+  if(role==='bot')av.innerHTML=botConfig?.logo_url?`<img src="${botConfig.logo_url}" alt="bot"/>`:'🎓';
+  else av.textContent='👤';
+  const bub=document.createElement('div');bub.className='bubble';
+  bub.innerHTML=raw?html:renderMd(html);
+  wrap.appendChild(av);wrap.appendChild(bub);
+  document.getElementById('messages').appendChild(wrap);
+  scrollDown();return bub;
+}
+function addTyping(){
+  const w=document.createElement('div');w.className='msg-wrap bot';w.id='ty-ind';
+  const av=document.createElement('div');av.className='msg-avatar';
+  av.innerHTML=botConfig?.logo_url?`<img src="${botConfig.logo_url}" alt="bot"/>`:'🎓';
+  const b=document.createElement('div');b.className='bubble';
+  b.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';
+  w.appendChild(av);w.appendChild(b);document.getElementById('messages').appendChild(w);scrollDown();
+}
+function removeTyping(){const t=document.getElementById('ty-ind');if(t)t.remove();}
+
+// ── Send message ──────────────────────────────────────────────
+async function sendMsg(){
+  stopTTS(); // auto-stop any current speech when user sends a message
+  const input=document.getElementById('user-input');
+  let text=input.value.trim();
+  if(!text&&!pendingPdfText)return;
+
+  let fullPrompt=text,showText=text;
+  const hadPdf=!!pendingPdfText;
+  const localResult=inlineAnalysisResult;
+
+  if(pendingPdfText){
+    const summary=localResult?`\n\nPre-parsed summary:\nPassed credit hours (excluding F/incomplete): ${localResult.earned}\nCGPA: ${localResult.cgpa||'unknown'}\nFailed courses: ${localResult.failedCourses.map(r=>`${r.code} (${r.grade})`).join(', ')||'none detected'}`:'';
+    const pre=text?`${text}${summary}\n\nFull transcript:\n`
+      :`Please check my Capstone Project-I (CS-462) eligibility based on my academic transcript below and give a full detailed analysis:${summary}\n\n`;
+    fullPrompt=pre+pendingPdfText.slice(0,4000);
+    showText=text||'📄 Transcript uploaded — checking Capstone eligibility...';
+
+    // Show transcript table in chat
+    if(localResult&&localResult.rows&&localResult.rows.length){
+      const tableHtml=buildTranscriptTable(localResult.rows);
+      if(tableHtml){
+        const w=document.getElementById('welcome-screen');if(w)w.remove();
+        const wrap=document.createElement('div');wrap.className='msg-wrap bot';
+        const av=document.createElement('div');av.className='msg-avatar';
+        av.innerHTML=botConfig?.logo_url?`<img src="${botConfig.logo_url}" alt="bot"/>`:'🎓';
+        const bub=document.createElement('div');bub.className='bubble';
+        bub.style.cssText='max-width:90%;padding:12px 14px;';
+        bub.innerHTML=`<div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent)">📋 Transcript Detected</div>
+          <div style="font-size:11.5px;color:var(--muted2);margin-bottom:6px">
+            ✅ <strong style="color:var(--green)">${localResult.earned}</strong> passed credit hours 
+            &nbsp;|&nbsp; ❌ <strong style="color:var(--red)">${localResult.failedCourses.length}</strong> failed/incomplete excluded
+            &nbsp;|&nbsp; 📊 CGPA: <strong>${localResult.cgpa!==null?localResult.cgpa.toFixed(2):'N/A'}</strong>
+          </div>
+          ${tableHtml}`;
+        wrap.appendChild(av);wrap.appendChild(bub);
+        document.getElementById('messages').appendChild(wrap);
+        const m=document.getElementById('messages');m.scrollTop=m.scrollHeight;
+      }
+    }
+
+    clearInlineFile();
+    inlineAnalysisResult=null;
+  }
+
+  input.disabled=true;input.value='';input.style.height='auto';
+  addMsg('user',showText);addTyping();
+  await new Promise(r=>setTimeout(r,0));
+
+  try{
+    const res=await fetch(`${API}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:SESSION_ID,message:fullPrompt,bot_id:BOT_ID||undefined})});
+    const data=await res.json();
+    removeTyping();
+    const bubble=addMsg('bot',data.reply);
+
+    // Auto eligibility badge based on AI reply
+    if(hadPdf||data.reply.toLowerCase().includes('eligib')){
+      const rl=data.reply.toLowerCase();
+      const status=rl.includes('not eligible')||rl.includes('ineligible')?'ineligible'
+                  :rl.includes('committee')||rl.includes('conditionally')||rl.includes('may be allowed')?'partial'
+                  :rl.includes('eligible')?'eligible':null;
+      if(status){
+        const card=document.createElement('div');card.className=`elig-card ${status}`;
+        const ic={eligible:'✅',ineligible:'❌',partial:'⚠️'};
+        const lb={eligible:'Eligible for Capstone I',ineligible:'Not Currently Eligible',partial:'Conditional — Committee Review Required'};
+        card.innerHTML=`<div class="elig-headline">${ic[status]} ${lb[status]}</div>
+          <div style="font-size:11.5px;color:var(--muted2);margin-top:2px">See full analysis above from the bot.</div>`;
+        bubble.appendChild(card);
+      }
+    }
+
+    // No context suggestions
+    if(data.no_context){
+      const faqs=(botConfig?.faqs||[]).slice(0,4);
+      if(faqs.length){
+        const card=document.createElement('div');card.className='nocontext-card';
+        card.innerHTML='<div class="section-label" style="margin-bottom:4px">Try asking:</div>'+
+          faqs.map(f=>`<button class="nocontext-chip" onclick="sendQuick('${esc(f.question)}')">💬 ${esc(f.question)}</button>`).join('');
+        bubble.appendChild(card);
+      }
+    }
+
+    // Lead complete
+    if(data.lead_complete){
+      const lc=data.lead_complete;
+      const card=document.createElement('div');card.className='lead-card';
+      card.innerHTML=`<div style="font-weight:600;color:var(--green);margin-bottom:8px">✅ Request Received!</div>
+        <div class="lead-row"><span class="lead-label">Name</span><span class="lead-val">${esc(lc.name)}</span></div>
+        <div class="lead-row"><span class="lead-label">Phone</span><span class="lead-val">${esc(lc.phone)}</span></div>
+        ${lc.email?`<div class="lead-row"><span class="lead-label">Email</span><span class="lead-val">${esc(lc.email)}</span></div>`:''}
+        <div class="lead-row"><span class="lead-label">Request</span><span class="lead-val">${esc(lc.request)}</span></div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">We'll be in touch shortly. 👍</div>`;
+      bubble.appendChild(card);
+    }
+
+    playTTS(data.reply);
+  }catch(e){
+    removeTyping();addMsg('bot','Sorry, something went wrong. Please try again.');
+  }finally{
+    const inp=document.getElementById('user-input');inp.disabled=false;inp.focus();
+  }
+}
+function sendQuick(text){document.getElementById('user-input').value=text;sendMsg();}
+
+// ── Contact form ──────────────────────────────────────────────
+async function submitLead(){
+  const name=document.getElementById('lead-name').value.trim();
+  const phone=document.getElementById('lead-phone').value.trim();
+  const email=document.getElementById('lead-email').value.trim();
+  const req=document.getElementById('lead-request').value.trim();
+  if(!name||!phone){alert('Name and Phone are required.');return;}
+  const msg=`I'd like to get in touch. Name: ${name}, Phone: ${phone}`+(email?`, Email: ${email}`:'')+( req?`. Query: ${req}`:'.');
+  document.getElementById('lead-saved').style.display='block';
+  setTimeout(()=>{document.getElementById('lead-saved').style.display='none';},3000);
+  await fetch(`${API}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({session_id:SESSION_ID,message:msg,bot_id:BOT_ID||undefined})}).catch(()=>{});
+}
+
+// ── TTS ───────────────────────────────────────────────────────
+// Global audio state — one AudioContext lives for the whole session
+let _ttsCtx=null,_ttsSources=[],_ttsStopReq=false,_ttsRunning=false,_ttsQueue=[];
+
+function _getTtsCtx(){
+  if(!_ttsCtx||_ttsCtx.state==='closed')_ttsCtx=new AudioContext({sampleRate:24000});
+  return _ttsCtx;
+}
+
+// Public stop — kills all scheduled audio immediately
+function stopTTS(){
+  _ttsStopReq=true;_ttsQueue=[];
+  _ttsSources.forEach(s=>{try{s.stop();}catch(e){}});
+  _ttsSources=[];_ttsRunning=false;
+  const ind=document.getElementById('tts-indicator');
+  if(ind)ind.classList.remove('show');
+  updateStopBtn(false);
+}
+
+function updateStopBtn(show){
+  const btn=document.getElementById('stop-tts-btn');
+  if(btn)btn.style.display=show?'flex':'none';
+}
+
+async function playTTS(t){
+  if(!t)return;
+  _ttsQueue.push(t);
+  if(!_ttsRunning)_drainTTS();
+}
+
+async function _drainTTS(){
+  if(!_ttsQueue.length){_ttsRunning=false;updateStopBtn(false);document.getElementById('tts-indicator').classList.remove('show');return;}
+  _ttsRunning=true;_ttsStopReq=false;
+  const t=_ttsQueue.shift();
+  const ind=document.getElementById('tts-indicator');
+  ind.classList.add('show');
+  updateStopBtn(true);
+  try{
+    const res=await fetch(`${API}/tts`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:t})});
+    if(!res.ok)throw 0;
+    const ctx=_getTtsCtx();
+    // Unlock AudioContext immediately (some browsers suspend it)
+    if(ctx.state==='suspended')await ctx.resume();
+    // Schedule very close to now so first chunk plays with ~0 gap
+    let nextAt=ctx.currentTime+0.02;
+    let leftover=new Uint8Array(0);
+    const SR=24000;
+
+    const scheduleChunk=(bytes)=>{
+      const samples=Math.floor(bytes.length/2);
+      if(!samples)return;
+      const f32=new Float32Array(samples);
+      const dv=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+      for(let i=0;i<samples;i++)f32[i]=dv.getInt16(i*2,true)/32768;
+      const buf=ctx.createBuffer(1,samples,SR);
+      buf.copyToChannel(f32,0);
+      const src=ctx.createBufferSource();
+      src.buffer=buf;
+      src.connect(ctx.destination);
+      const startAt=Math.max(nextAt,ctx.currentTime);
+      src.start(startAt);
+      _ttsSources.push(src);
+      // Prune finished sources to avoid memory leak
+      if(_ttsSources.length>50)_ttsSources=_ttsSources.filter(s=>{try{return s.playbackState!==3;}catch(e){return true;}});
+      nextAt=startAt+buf.duration;
+    };
+
+    const reader=res.body.getReader();
+    while(true){
+      if(_ttsStopReq)break;
+      const{done,value}=await reader.read();
+      if(done)break;
+      // Merge with any leftover odd byte
+      const merged=new Uint8Array(leftover.length+value.length);
+      merged.set(leftover);merged.set(value,leftover.length);
+      const even=merged.length-(merged.length%2);
+      scheduleChunk(merged.slice(0,even));
+      leftover=merged.slice(even);
+    }
+    if(!_ttsStopReq&&leftover.length>=2)scheduleChunk(leftover);
+
+    // Wait until all scheduled audio has finished playing
+    if(!_ttsStopReq){
+      const remaining=(nextAt-ctx.currentTime)*1000+150;
+      if(remaining>0)await new Promise(r=>setTimeout(r,remaining));
+    }
+  }catch(e){}
+  if(!_ttsStopReq)_drainTTS();
+  else{_ttsRunning=false;updateStopBtn(false);document.getElementById('tts-indicator').classList.remove('show');}
+}
+
+// ── Voice input ───────────────────────────────────────────────
+function toggleMic(){
+  const btn=document.getElementById('mic-btn');
+  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){alert('Speech recognition not supported in this browser.');return;}
+  if(recognition&&btn.classList.contains('recording')){recognition.stop();btn.classList.remove('recording');return;}
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();recognition.lang='en-US';recognition.continuous=false;recognition.interimResults=false;
+  recognition.onresult=e=>{document.getElementById('user-input').value=e.results[0][0].transcript;};
+  recognition.onend=()=>btn.classList.remove('recording');
+  recognition.start();btn.classList.add('recording');
+}
+
+init();
+</script>
+</body>
+</html>
