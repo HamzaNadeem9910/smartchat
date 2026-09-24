@@ -5,9 +5,15 @@ from config import get_settings
 
 settings = get_settings()
 
+# Railway's MYSQL_URL uses mysql://; this project installs PyMySQL rather than
+# the default MySQLdb driver, so select it explicitly when no driver is given.
+database_url = settings.DATABASE_URL
+if database_url.startswith("mysql://"):
+    database_url = database_url.replace("mysql://", "mysql+pymysql://", 1)
+
 # Create database engine
 engine = create_engine(
-    settings.DATABASE_URL,
+    database_url,
     pool_pre_ping=True,
     pool_recycle=3600,
 )

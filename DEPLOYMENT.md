@@ -14,7 +14,7 @@ Create a managed MySQL 8 database (Railway MySQL, Aiven, or another managed MySQ
 
 ## 2. Deploy FastAPI on Railway (recommended)
 
-Railway suits this repository because it runs a persistent Python web process, accepts long-running request timeouts used by document/OCR and scraping workflows, and can host the Node WhatsApp service as a separate service. Connect the repository as a Railway project service and set **Root Directory** to `/backend`. Runtime: Python 3.11 or newer. Install command: `pip install -r requirements.txt`. Start command (also in `backend/Procfile`):
+Railway suits this repository because it runs a persistent Python web process, accepts long-running request timeouts used by document/OCR and scraping workflows, and can host the Node WhatsApp service as a separate service. Connect the repository as a Railway project service and set **Root Directory** to `/backend`. The `backend/.python-version` file pins Python to 3.11.5. Install command: `pip install -r requirements.txt`. Start command (also in `backend/Procfile`):
 
 ```sh
 gunicorn main:app --worker-class uvicorn.workers.UvicornWorker --workers 1 --bind 0.0.0.0:$PORT --timeout 300
