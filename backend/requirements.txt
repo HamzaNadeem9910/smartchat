@@ -15,7 +15,12 @@ pydantic-settings==2.1.0
 # ── Auth ───────────────────────────────────────────────────────────
 python-dotenv==1.0.0
 python-jose[cryptography]==3.3.0
+<<<<<<< HEAD
 bcrypt==4.1.3
+=======
+ppasslib[bcrypt]==1.7.4
+bcrypt==4.0.1
+>>>>>>> 44cb483 (Fix Passlib bcrypt compatibility)
 
 # ── Pinecone / Embeddings (university + restaurant pipelines) ──────
 pinecone
