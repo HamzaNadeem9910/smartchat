@@ -6,9 +6,9 @@ from fastapi.staticfiles import StaticFiles
 from database import Base, engine
 from config import get_settings
 from routers import auth, chatbots, payment, admin     
-from pinecone_ingest import router as pinecone_router
-from crawlee_ingest import router as crawlee_router
-from crawlee_scrape import router as scrape_router
+# from pinecone_ingest import router as pinecone_router
+# from crawlee_ingest import router as crawlee_router
+# from crawlee_scrape import router as scrape_router
 from routers import whatsapp
   
     
@@ -38,10 +38,10 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 app.include_router(auth.router)
 app.include_router(payment.router)
 app.include_router(chatbots.router)
-app.include_router(pinecone_router)
+# app.include_router(pinecone_router)
 app.include_router(admin.router)
-app.include_router(crawlee_router)
-app.include_router(scrape_router)
+# app.include_router(crawlee_router)
+# app.include_router(scrape_router)
 app.include_router(whatsapp.router)
 
 
