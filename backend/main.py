@@ -15,50 +15,27 @@ from crawlee_scrape import router as scrape_router
 
 app = FastAPI(
     title="SmartChat API",
-    version="2.0.0"
+    version="2.0.0",
 )
 
 
-# ─────────────────────────────────────────────────────────────
-# Database startup
-# ─────────────────────────────────────────────────────────────
 @app.on_event("startup")
 def initialize_database():
     Base.metadata.create_all(bind=engine)
 
 
-# ─────────────────────────────────────────────────────────────
-# CORS
-# ─────────────────────────────────────────────────────────────
 settings = get_settings()
-
-cors_origins = list(settings.cors_origins)
-
-required_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://smartchat-55xsv3qeu-hamzanadeem9910.vercel.app",
-]
-
-for origin in required_origins:
-    if origin not in cors_origins:
-        cors_origins.append(origin)
-
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ─────────────────────────────────────────────────────────────
-# Static uploads
-# ─────────────────────────────────────────────────────────────
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app.mount(
@@ -68,9 +45,6 @@ app.mount(
 )
 
 
-# ─────────────────────────────────────────────────────────────
-# Routers
-# ─────────────────────────────────────────────────────────────
 app.include_router(auth.router)
 app.include_router(payment.router)
 app.include_router(chatbots.router)
@@ -81,9 +55,6 @@ app.include_router(scrape_router)
 app.include_router(whatsapp.router)
 
 
-# ─────────────────────────────────────────────────────────────
-# Root
-# ─────────────────────────────────────────────────────────────
 @app.get("/")
 def root():
     return {
@@ -93,9 +64,6 @@ def root():
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# Health check
-# ─────────────────────────────────────────────────────────────
 @app.get("/health")
 def health_check():
     return {
@@ -104,9 +72,6 @@ def health_check():
     }
 
 
-# ─────────────────────────────────────────────────────────────
-# Admin panel
-# ─────────────────────────────────────────────────────────────
 @app.get("/admin")
 def admin_panel():
     return FileResponse(
@@ -117,10 +82,6 @@ def admin_panel():
     )
 
 
-# ─────────────────────────────────────────────────────────────
-# Local development
-# Railway uses Gunicorn command instead
-# ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
 
