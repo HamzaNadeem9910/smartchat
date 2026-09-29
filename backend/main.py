@@ -26,9 +26,22 @@ def initialize_database():
 
 settings = get_settings()
 
+# CORS configuration
+# Keep origins from settings and explicitly allow the production Vercel frontend.
+cors_origins = list(settings.cors_origins)
+
+production_origins = [
+    "https://smartchat-lyart.vercel.app",
+]
+
+for origin in production_origins:
+    if origin not in cors_origins:
+        cors_origins.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=cors_origins,
+    # Also allow SmartChat preview deployments under the account domain.
     allow_origin_regex=r"https://smartchat-[a-zA-Z0-9-]+-hamzanadeem9910\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
