@@ -6,7 +6,12 @@ import bcrypt
 
 from database import get_db
 from models import Subscriber
-from schemas import SubscriberCreate, SubscriberLogin, SubscriberResponse, Token
+from schemas import (
+    SubscriberCreate,
+    SubscriberLogin,
+    SubscriberResponse,
+    Token,
+)
 from config import get_settings
 
 
@@ -20,18 +25,21 @@ def get_password_hash(password: str) -> str:
     if len(password_bytes) > 72:
         raise HTTPException(
             status_code=400,
-            detail="Password must be 72 bytes or less"
+            detail="Password must be 72 bytes or less",
         )
 
     hashed = bcrypt.hashpw(
         password_bytes,
-        bcrypt.gensalt()
+        bcrypt.gensalt(),
     )
 
     return hashed.decode("utf-8")
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
+def verify_password(
+    plain_password: str,
+    hashed_password: str,
+) -> bool:
     try:
         password_bytes = plain_password.encode("utf-8")
 
@@ -40,13 +48,17 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
         return bcrypt.checkpw(
             password_bytes,
-            hashed_password.encode("utf-8")
+            hashed_password.encode("utf-8"),
         )
+
     except (ValueError, TypeError):
         return False
 
 
-def create_access_token(data: dict, expires_delta: timedelta = None):
+def create_access_token(
+    data: dict,
+    expires_delta: timedelta | None = None,
+):
     to_encode = data.copy()
 
     if expires_delta:
@@ -61,19 +73,23 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     return jwt.encode(
         to_encode,
         settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
+        algorithm=settings.ALGORITHM,
     )
 
 
-@router.post("/signup", response_model=SubscriberResponse)
-def signup(user: SubscriberCreate, db: Session = Depends(get_db)):
-    # Enforce bcrypt's 72-byte password limit before any database work.
-    # Byte length is used instead of character count because UTF-8
-    # characters can occupy more than one byte.
+@router.post(
+    "/signup",
+    response_model=SubscriberResponse,
+)
+def signup(
+    user: SubscriberCreate,
+    db: Session = Depends(get_db),
+):
+    # bcrypt supports a maximum of 72 bytes.
     if len(user.password.encode("utf-8")) > 72:
         raise HTTPException(
             status_code=400,
-            detail="Password must be 72 bytes or less"
+            detail="Password must be 72 bytes or less",
         )
 
     existing_user = (
@@ -85,7 +101,7 @@ def signup(user: SubscriberCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(
             status_code=400,
-            detail="Email already registered"
+            detail="Email already registered",
         )
 
     hashed_password = get_password_hash(user.password)
@@ -94,3 +110,104 @@ def signup(user: SubscriberCreate, db: Session = Depends(get_db)):
         name=user.name,
         email=user.email,
         password=hashed_password,
+        plan=user.plan,
+        status=user.status,
+    )
+
+    db.add(new_user)
+
+    try:
+        db.commit()
+        db.refresh(new_user)
+
+    except Exception:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to create account",
+        )
+
+    return new_user
+
+
+@router.post(
+    "/login",
+    response_model=Token,
+)
+def login(
+    credentials: SubscriberLogin,
+    db: Session = Depends(get_db),
+):
+    user = (
+        db.query(Subscriber)
+        .filter(Subscriber.email == credentials.email)
+        .first()
+    )
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+        )
+
+    if not verify_password(
+        credentials.password,
+        user.password,
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid credentials",
+        )
+
+    if user.status == "suspended":
+        raise HTTPException(
+            status_code=403,
+            detail="Account suspended",
+        )
+
+    access_token = create_access_token(
+        data={
+            "sub": user.email,
+            "user_id": user.id,
+        }
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": user.id,
+        "email": user.email,
+        "plan": user.plan,
+        "name": user.name,
+    }
+
+
+@router.post("/verify-token")
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+        )
+
+        email = payload.get("sub")
+        user_id = payload.get("user_id")
+
+        if email is None or user_id is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token",
+            )
+
+        return {
+            "valid": True,
+            "email": email,
+            "user_id": user_id,
+        }
+
+    except JWTError:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token",
+        )
